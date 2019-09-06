@@ -274,6 +274,9 @@ float step = unit/4;
 float halfstep = step/2;
 float step2 = step*2;
 float wordstep = step;
+float colstep = 3*unit/2;
+
+float elstep = step * sqrt(2)/2;
 
 float hookrad = 2*halfstep/3;
 float dotrad = halfstep/5;
@@ -292,10 +295,6 @@ void render_voice_mark(float offset=0.0) {
     cairo_line_to(cr, markx, riby + step/3 + offset);
 }
 
-void render_hook() {
-    cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
-}
-
 void render_letter(char c) {
     switch (c) {
     case 'b':
@@ -309,7 +308,7 @@ void render_letter(char c) {
     case 'f':
         cairo_move_to(cr, spinex, riby);
         cairo_line_to(cr, rightx, riby);
-        cairo_line_to(cr, rightx-halfstep/2, riby+halfstep);
+        cairo_rel_line_to(cr, -halfstep/2, halfstep);
         riby += halfstep;
         break;
     case 'D':
@@ -317,9 +316,7 @@ void render_letter(char c) {
     case 'T':
         cairo_move_to(cr, spinex, riby);
         cairo_line_to(cr, rightx, riby);
-        // cairo_new_sub_path(cr);
-        // cairo_arc(cr, rightx, riby + hookrad, hookrad, M_PI/2, 3*M_PI/2);
-        render_hook();
+        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
         riby += halfstep;
         break;
     case 'd':
@@ -333,7 +330,7 @@ void render_letter(char c) {
     case 's':
         cairo_move_to(cr, leftx, riby);
         cairo_line_to(cr, rightx, riby);
-        cairo_line_to(cr, rightx-halfstep/2, riby+halfstep);
+        cairo_rel_line_to(cr, -halfstep/2, halfstep);
         riby += halfstep;
         break;
     case 'Z':
@@ -341,9 +338,7 @@ void render_letter(char c) {
     case 'S':
         cairo_move_to(cr, leftx, riby);
         cairo_line_to(cr, rightx, riby);
-        // cairo_new_sub_path(cr);
-        // cairo_arc(cr, rightx, riby + hookrad, hookrad, M_PI/2, 3*M_PI/2);
-        render_hook();
+        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
         riby += halfstep;
         break;
     case 'g':
@@ -355,9 +350,7 @@ void render_letter(char c) {
     case 'h':
         cairo_move_to(cr, leftx, riby);
         cairo_line_to(cr, spinex, riby);
-        // cairo_new_sub_path(cr);
-        // cairo_arc(cr, spinex, riby + hookrad, hookrad, M_PI/2, 3*M_PI/2);
-        render_hook();
+        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
         riby += halfstep;
         break;
     case 'w':
@@ -366,15 +359,15 @@ void render_letter(char c) {
         cairo_line_to(cr, spinex, riby);
         break;
     case 'l':
-        cairo_move_to(cr, rightx, riby);
-        riby += step2;
-        cairo_line_to(cr, leftx, riby);
+        cairo_move_to(cr, spinex+elstep, riby);
+        riby += 2*elstep;
+        cairo_line_to(cr, spinex-elstep, riby);
         break;
     case 'r':
-        cairo_move_to(cr, rightx, riby);
-        riby += step2;
-        cairo_line_to(cr, leftx, riby);
-        cairo_rel_curve_to(cr, halfstep,-halfstep, step,0, 0,halfstep);
+        cairo_move_to(cr, spinex+elstep, riby);
+        riby += 2*elstep;
+        cairo_line_to(cr, spinex-elstep, riby);
+        cairo_rel_curve_to(cr, elstep/2,-halfstep, elstep,0, 0,halfstep);
         riby += halfstep;
         break;
     case 'y':
@@ -466,6 +459,25 @@ void render_word(string w) {
     cairo_stroke(cr);
 }
 
+void render_vowel_word(string w) {
+    riby += step;
+
+    if (w == "A") {
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex,riby, halfstep, 2*M_PI,M_PI);
+        riby += halfstep;
+    }
+    else if (w == "O") {
+        riby += halfstep;
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex,riby, halfstep, 0,2*M_PI);
+        riby += halfstep;
+    }
+    else cout << "unknown vowel word: " << w;
+
+    cairo_stroke(cr);
+}
+
 int main(int nargs, char * args[])
 {
     cairo_surface_t * csurf = cairo_pdf_surface_create(
@@ -480,7 +492,7 @@ int main(int nargs, char * args[])
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
-    spinex = MARGIN+0.2;
+    spinex = MARGIN + step;
     leftx = spinex - step;
     rightx = spinex + step;
     markx = rightx + halfstep;
@@ -488,9 +500,47 @@ int main(int nargs, char * args[])
     starty = MARGIN;
     riby = starty;
 
-    render_word("`nw`");
+    render_word("`mzN");
+    starty = riby + wordstep;
+    render_word("grs");
+    starty = riby + wordstep;
+    render_word("h`");
+    starty = riby + wordstep;
+    render_word("swt");
+    starty = riby + wordstep;
+    render_word("T");
+    starty = riby + wordstep;
+    render_word("snd");
+    starty = riby + wordstep;
+    render_word("Tt");
+    starty = riby + wordstep;
+    render_word("svd");
+    starty = riby + wordstep;
+    render_vowel_word("A");
+    starty = riby + wordstep;
+    render_word("rtS");
+    starty = riby + wordstep;
+    render_word("lk");
+    starty = riby + wordstep;
+    render_word("m");
 
     starty = riby + wordstep;
+    render_vowel_word("O");
+    starty = riby + wordstep;
+    render_word("`ts");
+    starty = riby + wordstep;
+    render_word("glrs");
+
+    // column
+
+    spinex = MARGIN + colstep;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = MARGIN;
+    riby = starty;
+
     render_word("smnN");
 
     starty = riby + wordstep;
