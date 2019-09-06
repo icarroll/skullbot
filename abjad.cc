@@ -467,6 +467,11 @@ void render_vowel_word(string w) {
         cairo_arc(cr, spinex,riby, halfstep, 2*M_PI,M_PI);
         riby += halfstep;
     }
+    else if (w == "I") {
+        riby += step;
+        cairo_move_to(cr, spinex, riby);
+        cairo_rel_curve_to(cr, step,0, step,-step, step,-step);
+    }
     else if (w == "O") {
         riby += halfstep;
         cairo_new_sub_path(cr);
@@ -523,6 +528,15 @@ int main(int nargs, char * args[])
     render_word("lk");
     starty = riby + wordstep;
     render_word("m");
+
+    starty = riby + wordstep;
+    render_vowel_word("I");
+    starty = riby + wordstep;
+    render_word("wns");
+    starty = riby + wordstep;
+    render_word("wz");
+    starty = riby + wordstep;
+    render_word("lst");
 
     starty = riby + wordstep;
     render_vowel_word("O");
