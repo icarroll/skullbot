@@ -268,13 +268,16 @@ vector<seg_t> texts[] = {
 
 cairo_t * cr;
 
-float unit = 1.0/6.0;
+float unit = 1.0/5.0;
 
 float step = unit/4;
 float halfstep = step/2;
 float step2 = step*2;
+float ribstep = 2*step/3;
 float wordstep = step;
 float colstep = 3*unit/2;
+
+int cur_col;
 
 float elstep = step * sqrt(2)/2;
 
@@ -291,8 +294,8 @@ float starty;
 float vowely;
 
 void render_voice_mark(float offset=0.0) {
-    cairo_move_to(cr, markx, riby - step/3 + offset);
-    cairo_line_to(cr, markx, riby + step/3 + offset);
+    cairo_move_to(cr, markx, riby - 3*step/8 + offset);
+    cairo_line_to(cr, markx, riby + 3*step/8 + offset);
 }
 
 void render_letter(char c) {
@@ -406,24 +409,59 @@ void render_vowel_hook() {
     cairo_arc(cr, spinex-halfstep,riby, halfstep, 2*M_PI,M_PI);
 }
 
-/*
-i seat
-I sit
-e sate
-E set
-A sat
-a sot
-O sup
-o so
-U soot
-u suit
+void render_vowel(char c) {
+    switch (c) {
+    case 'i':   // seat
+        break;
+    case 'I':   // sit
+        break;
+    case 'e':   // sate
+        break;
+    case 'E':   // set
+        break;
+    case 'A':   // sat
+        break;
+    case 'a':   // sot
+        break;
+    case 'O':   // sup
+        break;
+    case 'o':   // so
+        break;
+    case 'U':   // soot
+        break;
+    case 'u':   // suit
+        break;
+    default:
+        cout << "unknown vowel: " << c << endl;
+        break;
+    }
+}
 
-!e ei say
-!a ai site
-!o oi soy
-^a au south
-^o ou low
-*/
+void render_i_dipthong(char c) {
+    switch (c) {
+    case 'e':   // !e ei say
+        break;
+    case 'a':   // !a ai site
+        break;
+    case 'o':   // !o oi soy
+        break;
+    default:
+        cout << "unknown i dipthong: " << c << endl;
+        break;
+    }
+}
+
+void render_u_dipthong(char c) {
+    switch (c) {
+    case 'a':   // ^a au south
+        break;
+    case 'o':   // ^o ou low
+        break;
+    default:
+        cout << "unknown u dipthong: " << c << endl;
+        break;
+    }
+}
 
 void render_word(string w) {
     riby = starty;
@@ -434,7 +472,7 @@ void render_word(string w) {
         riby += halfstep;
     }
 
-    riby += halfstep;
+    riby += ribstep;
 
     bool final_vowel = false;
     if (w.back() == '`') {
@@ -444,7 +482,7 @@ void render_word(string w) {
 
     for (char c : w) {
         render_letter(c);
-        riby += halfstep;
+        riby += ribstep;
     }
 
     if (final_vowel) {
@@ -483,6 +521,26 @@ void render_vowel_word(string w) {
     cairo_stroke(cr);
 }
 
+void render_words(vector<string> ws) {
+    for (auto w : ws) {
+        if (w == "A" || w == "I" || w == "O") render_vowel_word(w);
+        else render_word(w);
+
+        starty = riby + wordstep;
+    }
+}
+
+vector<string> split_words(string text) {
+    istringstream iss(text);
+    vector<string> ws;
+    string w;
+    while (iss >> w) {
+        ws.push_back(w);
+    }
+
+    return ws;
+}
+
 int main(int nargs, char * args[])
 {
     cairo_surface_t * csurf = cairo_pdf_surface_create(
@@ -497,6 +555,7 @@ int main(int nargs, char * args[])
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
+    /*
     spinex = MARGIN + step;
     leftx = spinex - step;
     rightx = spinex + step;
@@ -547,7 +606,7 @@ int main(int nargs, char * args[])
 
     // column
 
-    spinex = MARGIN + colstep;
+    spinex = MARGIN + step + colstep;
     leftx = spinex - step;
     rightx = spinex + step;
     markx = rightx + halfstep;
@@ -586,6 +645,69 @@ int main(int nargs, char * args[])
     render_word("`^atrdZs");
     starty = riby + wordstep;
     render_word("frtSn");
+    */
+
+    cur_col = 0;
+
+    // column
+
+    spinex = MARGIN + step + cur_col++*colstep;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = MARGIN;
+    riby = starty;
+
+    render_words(split_words("prd `nt prdZds b` dZn `stn"));
+
+    // column
+
+    spinex = MARGIN + step + cur_col++*colstep;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = MARGIN;
+    riby = starty;
+
+    render_words(split_words("`t `s A trT ynfrsl` `knltSt Tt A sNkl mn `n psSn `f A gd frtSn mst b `n wnt `f A wf"));
+
+    // column
+
+    spinex = MARGIN + step + cur_col++*colstep;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = MARGIN;
+    riby = starty;
+
+    render_words(split_words("hwfr ltl nn T flNs `r fys `f stS A mn m` b `n hs frst `ntrN A nbrhd Ts trT"));
+
+    // column
+
+    spinex = MARGIN + step + cur_col++*colstep;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = MARGIN;
+    riby = starty;
+
+    render_words(split_words("`s s wl fkst `n T mnds `f T srntN fmls Tt h `s knstrt T rtfl prprt` `f sm wn"));
+
+    // column
+
+    spinex = MARGIN + step + cur_col++*colstep;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = MARGIN;
+    riby = starty;
+
+    render_words(split_words("`r `Tr `f Tr dtrs"));
 
     /*
     vowely = riby;
