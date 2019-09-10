@@ -45,7 +45,7 @@ float elstep = step * sqrt(2)/2;
 
 float hookrad = 2*halfstep/3;
 float dotrad = halfstep/5;
-float voicedlen = 3*step/4;
+float voicedlen = 2*step/3;
 
 float leftx;
 float spinex;
@@ -55,6 +55,16 @@ float markx;
 float starty;
 float riby;
 float vowely;
+
+void new_column() {
+    spinex = MARGIN + step + cur_col++*colstep;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = MARGIN;
+    riby = starty;
+}
 
 void render_voice_mark(float offset=0.0) {
     cairo_move_to(cr, markx, riby - voicedlen/2 + offset);
@@ -163,6 +173,80 @@ void render_consonant(char c) {
         cairo_new_sub_path(cr);
         cairo_arc(cr, spinex,riby, halfstep, 0,2*M_PI);
         riby += halfstep;
+        break;
+    }
+}
+
+struct fills_t {
+    bool l_top;
+    bool c_top;
+    bool r_top;
+    bool l_bot;
+    bool c_bot;
+    bool r_bot;
+};
+
+fills_t consonant_fills(char c) {
+    switch (c) {
+    case 'b':
+    case 'p':
+        return {false, true, true, false, true, true};
+        break;
+    case 'v':
+    case 'f':
+        return {false, true, true, false, false, true};
+        break;
+    case 'D':
+    case 'T':
+        return {false, true, true, false, false, true};
+        break;
+    case 'd':
+    case 't':
+        return {true, true, true, true, true, true};
+        break;
+    case 'z':
+    case 's':
+        return {true, true, true, false, false, true};
+        break;
+    case 'Z':
+    case 'S':
+        return {true, true, true, false, false, true};
+        break;
+    case 'g':
+    case 'k':
+        return {true, true, false, true, true, false};
+        break;
+    case 'h':
+        return {true, true, false, true, true, false};
+        break;
+    case 'w':
+        return {false, false, true, false, true, false};
+        break;
+    case 'l':
+        return {false, false, true, true, false, false};
+        break;
+    case 'r':
+        return {false, false, true, true, false, false};
+        break;
+    case 'y':
+        return {false, true, false, true, false, false};
+        break;
+    case 'm':
+        return {false, false, true, false, true, true};
+        break;
+    case 'n':
+        return {false, true, false, true, true, true}; // ??? c_bot=?
+        break;
+    case 'N':
+        return {true, false, false, true, true, false};
+        break;
+    case '`':
+        return {true, true, false, true, true, false};
+        break;
+    default:
+        // unimplemented letter
+        cout << "unimplemented: " << c << endl;
+        return {false, true, false, false, true, false};
         break;
     }
 }
@@ -404,7 +488,7 @@ void render_vowel_word(string w) {
     cairo_stroke(cr);
 }
 
-void render_word(string w) {
+void old_and_busted_render_word(string w) {
     riby = starty;
 
     if (vowel(w[0])) {
@@ -455,20 +539,69 @@ void render_word(string w) {
     cairo_stroke(cr);
 }
 
-/*
-void OLD_render_words(vector<string> ws) {
-    for (auto w : ws) {
-        if (w == "A" || w == "I" || w == "O") render_vowel_word(w);
-        else render_word(w);
+void new_hotness_render_word(string w) {
+    riby = starty;
 
-        starty = riby + wordstep;
+    if (vowel(w[0])) {
+        render_vowel_word(w);
+        return;
     }
+
+    if (w[0] != '`') riby += ribstep/2;
+
+    int ix = 0;
+    int nextrib_ix;
+    while (ix < w.length()) {
+        nextrib_ix = ix + 1;
+        while (nextrib_ix<w.length() && vowel(w[nextrib_ix])) nextrib_ix += 1;
+
+        if (w[ix] == '`') render_vowel_hook();
+        else render_consonant(w[ix]);
+        fills_t fills = consonant_fills(w[ix]);
+
+        float prev_riby = riby;
+
+        if (nextrib_ix<w.length()) {
+            fills_t fills2 = consonant_fills(w[nextrib_ix]);
+            if (fills.l_bot && fills2.l_top
+             || fills.c_bot && fills2.c_top
+             || fills.r_bot && fills2.r_top
+             ) { // || ix+1<w.length() && vowel(w[ix+1])) {
+                // gap
+                riby += ribstep;
+            }
+            else {
+                // no gap
+            }
+        }
+        else {
+            // no next rib
+        }
+
+        vowely = (prev_riby + riby) / 2;
+        for (int vix=ix+1 ; vix<nextrib_ix ; vix+=1) {
+            float vowelx = markx;
+            if (w[vix] == '!') render_i_dipthong(w[++vix], vowelx);
+            else if (w[vix] == '^') render_u_dipthong(w[++vix], vowelx);
+            else render_monopthong(w[vix], vowelx);
+        }
+
+        ix = nextrib_ix;
+    }
+
+    if (w.back() == '`') riby -= halfstep;
+    else riby += ribstep/2;
+
+    cairo_move_to(cr, spinex, starty);
+    cairo_line_to(cr, spinex, riby);
+    cairo_stroke(cr);
 }
-*/
 
 void render_words(vector<string> ws) {
     for (auto w : ws) {
-        render_word(w);
+        //render_word(w);
+        new_hotness_render_word(w);
+        //old_and_busted_render_word(w);
         starty = riby + wordstep;
     }
 }
@@ -482,16 +615,6 @@ vector<string> split_words(string text) {
     }
 
     return ws;
-}
-
-void new_column() {
-    spinex = MARGIN + step + cur_col++*colstep;
-    leftx = spinex - step;
-    rightx = spinex + step;
-    markx = rightx + halfstep;
-
-    starty = MARGIN;
-    riby = starty;
 }
 
 int main(int nargs, char * args[])
