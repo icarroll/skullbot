@@ -313,8 +313,29 @@ void render_i_dipthong(char c, float vowelx) {
 void render_u_dipthong(char c, float vowelx) {
     switch (c) {
     case 'a':   // ^a au south
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, vowelx, vowely);
+        cairo_rel_line_to(cr, 0, halfstep);
+        cairo_rel_line_to(cr, halfstep * sqrt(3)/2, -halfstep/2);
+        vowely += vowelstep;
         break;
     case 'o':   // ^o ou low
+        cairo_move_to(cr, vowelx, vowely);
+        cairo_rel_line_to(cr, halfstep, 0);
+        cairo_rel_line_to(cr, halfstep/2, -halfstep * sqrt(3)/2);
+
+        cairo_save(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, vowelx, vowely, dotrad*2, 0, 2*M_PI);
+        cairo_stroke(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 1,1,1);
+        cairo_fill(cr);
+        cairo_restore(cr);
+
+        vowely += vowelstep;
         break;
     default:
         cout << "unknown u dipthong: " << c << endl;
@@ -496,10 +517,10 @@ int main(int nargs, char * args[])
     render_words(split_words("`t `s A trT yunfrsl` `knltSt Tt A sNkl mn `n psSn `f A gd frtSn mst b `n wnt `f A w!af"));
 
     new_column();
-    render_words(split_words("hwfr ltl non T flNs `r vys `f stS A mn m` b `an hs frst `EntrN A nbrhd Ts trT"));
+    render_words(split_words("h^awfr ltl n^on T flNs `r vys `f stS A mn m` b `an hs frst `EntrN A nbrhd Ts trT"));
 
     new_column();
-    render_words(split_words("`s s wl fkst `n T mnds `f T srntN fmls Tt h `s knstrt T rtfUl prprt` `f sm wn"));
+    render_words(split_words("`s s wl fkst `n T mnds `f T srntN fmls Tt h `s knstrt T r!atfUl prprt` `f sm wn"));
 
     new_column();
     render_words(split_words("`r `Tr `f Tr dtrs"));
