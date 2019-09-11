@@ -488,58 +488,7 @@ void render_vowel_word(string w) {
     cairo_stroke(cr);
 }
 
-void old_and_busted_render_word(string w) {
-    riby = starty;
-
-    if (vowel(w[0])) {
-        render_vowel_word(w);
-        return;
-    }
-
-    if (w[0] != '`') riby += ribstep;
-
-    int ix = 0;
-    int nextrib_ix;
-    while (ix < w.length()) {
-        nextrib_ix = ix + 1;
-        while (nextrib_ix<w.length() && vowel(w[nextrib_ix])) nextrib_ix += 1;
-
-        if (w[ix] == '`') {
-            render_vowel_hook();
-            vowely = riby - halfstep/2;
-        }
-        else {
-            render_consonant(w[ix]);
-            vowely = riby + ribstep/2;
-        }
-
-        if (voiced(w[ix])) vowely += voicedlen/2;
-
-        for (int vix=ix+1 ; vix<nextrib_ix ; vix+=1) {
-            float vowelx = markx;
-            if (w[vix] == '!') render_i_dipthong(w[++vix], vowelx);
-            else if (w[vix] == '^') render_u_dipthong(w[++vix], vowelx);
-            else render_monopthong(w[vix], vowelx);
-        }
-
-        if (nextrib_ix < w.length() && voiced(w[nextrib_ix])) {
-            if (vowely >= riby + ribstep) riby = vowely-vowelstep+ribstep/2+voicedlen/2;
-            else riby += ribstep;
-        }
-        else {
-            if (vowely >= riby + ribstep) riby = vowely-vowelstep+ribstep/2;
-            else riby += ribstep;
-        }
-
-        ix = nextrib_ix;
-    }
-
-    cairo_move_to(cr, spinex, starty);
-    cairo_line_to(cr, spinex, riby - (w.back() == '`' ? ribstep+halfstep : 0));
-    cairo_stroke(cr);
-}
-
-void new_hotness_render_word(string w) {
+void render_word(string w) {
     riby = starty;
 
     if (vowel(w[0])) {
@@ -599,9 +548,7 @@ void new_hotness_render_word(string w) {
 
 void render_words(vector<string> ws) {
     for (auto w : ws) {
-        //render_word(w);
-        new_hotness_render_word(w);
-        //old_and_busted_render_word(w);
+        render_word(w);
         starty = riby + wordstep;
     }
 }
