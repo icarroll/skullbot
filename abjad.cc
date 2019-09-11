@@ -251,6 +251,59 @@ fills_t consonant_fills(char c) {
     }
 }
 
+struct spine_attach_t {
+    float before;
+    float after;
+};
+
+spine_attach_t spine_attach(char c) {
+    switch (c) {
+    case 'b':
+    case 'p':
+    case 'd':
+    case 't':
+    case 'g':
+    case 'k':
+        return {0,0};
+        break;
+    case 'v':
+    case 'f':
+    case 'z':
+    case 's':
+        return {0,halfstep};
+        break;
+    case 'D':
+    case 'T':
+    case 'Z':
+    case 'S':
+    case 'h':
+        return {0,halfstep};
+        break;
+    case 'w':
+        return {step,0};
+        break;
+    case 'l':
+    case 'r':
+        return {elstep,elstep};
+        break;
+    case 'y':
+        return {0,step};
+        break;
+    case 'm':
+    case 'n':
+    case 'N':
+        return {0,3*step/4};
+        break;
+    case '`':
+        return {0,halfstep};
+        break;
+    default:
+        cout << "unimplemented: " << c << endl;
+        return {0,0};
+        break;
+    }
+}
+
 void render_vowel_hook() {
     cairo_new_sub_path(cr);
     cairo_arc(cr, spinex-halfstep,riby, halfstep, 2*M_PI,M_PI);
@@ -496,7 +549,7 @@ void render_word(string w) {
         return;
     }
 
-    if (w[0] != '`') riby += ribstep/2;
+    if (w[0] != '`') riby += ribstep/2; //TODO vowel adjacent
 
     int ix = 0;
     int nextrib_ix;
@@ -527,7 +580,16 @@ void render_word(string w) {
             // no next rib
         }
 
-        vowely = (prev_riby + riby) / 2;
+        spine_attach_t prev_attach = spine_attach(w[ix]);
+        float prevy = prev_riby - prev_attach.after;
+        float nexty;
+        if (nextrib_ix < w.length()) {
+            spine_attach_t next_attach = spine_attach(w[nextrib_ix]);
+            nexty = riby + next_attach.before;
+        }
+        else nexty = riby;
+        vowely = (prevy + nexty) / 2;
+
         for (int vix=ix+1 ; vix<nextrib_ix ; vix+=1) {
             float vowelx = markx;
             if (w[vix] == '!') render_i_dipthong(w[++vix], vowelx);
@@ -538,7 +600,7 @@ void render_word(string w) {
         ix = nextrib_ix;
     }
 
-    if (w.back() == '`') riby -= halfstep;
+    if (w.back() == '`') riby -= halfstep; //TODO vowel adjacent
     else riby += ribstep/2;
 
     cairo_move_to(cr, spinex, starty);
