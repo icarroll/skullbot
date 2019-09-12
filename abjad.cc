@@ -29,6 +29,7 @@ const float COLUMN_HEIGHT = (11 - MARGIN) / ROWS_PER_PAGE - MARGIN;
 
 cairo_t * cr;
 
+float LINE_WIDTH = 0.01;
 float unit = 1.0/5.0;
 
 float step = unit/4;
@@ -80,7 +81,7 @@ void render_consonant(char c) {
         cairo_line_to(cr, rightx, riby);
         break;
     case 'v':
-        render_voice_mark();
+        render_voice_mark(halfstep/2);
     case 'f':
         cairo_move_to(cr, spinex, riby);
         cairo_line_to(cr, rightx, riby);
@@ -102,7 +103,7 @@ void render_consonant(char c) {
         cairo_line_to(cr, rightx, riby);
         break;
     case 'z':
-        render_voice_mark();
+        render_voice_mark(halfstep/2);
     case 's':
         cairo_move_to(cr, leftx, riby);
         cairo_line_to(cr, rightx, riby);
@@ -251,12 +252,12 @@ fills_t consonant_fills(char c) {
     }
 }
 
-struct spine_attach_t {
+struct vowel_space_t {
     float before;
     float after;
 };
 
-spine_attach_t spine_attach(char c) {
+vowel_space_t vowel_space(char c) {
     switch (c) {
     case 'b':
     case 'p':
@@ -270,14 +271,14 @@ spine_attach_t spine_attach(char c) {
     case 'f':
     case 'z':
     case 's':
-        return {0,halfstep};
+        return {0,0};
         break;
     case 'D':
     case 'T':
     case 'Z':
     case 'S':
     case 'h':
-        return {0,halfstep};
+        return {0,0};
         break;
     case 'w':
         return {step,0};
@@ -292,7 +293,7 @@ spine_attach_t spine_attach(char c) {
     case 'm':
     case 'n':
     case 'N':
-        return {0,3*step/4};
+        return {0,0};
         break;
     case '`':
         return {0,halfstep};
@@ -311,103 +312,113 @@ void render_vowel_hook() {
 }
 
 void render_monopthong(char c, float vowelx) {
+    float x = vowelx;
+    float y = vowely;
+
     switch (c) {
     case 'i':   // seat
+        x += halfstep/2 /2;
+        y += halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
-        vowely += vowelstep;
         break;
     case 'I':   // sit
+        x += halfstep * sqrt(3)/2 /2;
+        y += halfstep/2 /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep * sqrt(3)/2, -halfstep/2);
-        vowely += vowelstep;
         break;
     case 'e':   // sate
+        x += halfstep /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep, 0);
-        vowely += vowelstep;
         break;
     case 'E':   // set
+        x += halfstep * sqrt(3)/2 /2;
+        y -= halfstep/2 /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep * sqrt(3)/2, +halfstep/2);
-        vowely += vowelstep;
         break;
     case 'A':   // sat
+        x += halfstep/2 /2;
+        y -= halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep/2, halfstep * sqrt(3)/2);
-        vowely += vowelstep;
         break;
     case 'a':   // sot
+        y -= halfstep /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, 0, halfstep);
-        vowely += vowelstep;
         break;
     case 'O':   // sup
+        x -= halfstep/2 /2;
+        y -= halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep/2, halfstep * sqrt(3)/2);
-        vowely += vowelstep;
         break;
     case 'o':   // so
-        cairo_move_to(cr, vowelx, vowely);
+        x -= halfstep /2;
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep, 0);
 
         cairo_save(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad*2, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
         cairo_stroke(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
         cairo_restore(cr);
 
-        vowely += vowelstep;
         break;
     case 'U':   // soot
-        cairo_move_to(cr, vowelx, vowely);
+        x -= halfstep * sqrt(3)/2 /2;
+        y += halfstep/2 /2;
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep * sqrt(3)/2, -halfstep/2);
 
         cairo_save(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad*2, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
         cairo_stroke(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
         cairo_restore(cr);
 
-        vowely += vowelstep;
         break;
     case 'u':   // suit
-        cairo_move_to(cr, vowelx, vowely);
+        x -= halfstep/2 /2;
+        y += halfstep * sqrt(3)/2 /2;
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep/2, -halfstep * sqrt(3)/2);
 
         cairo_save(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad*2, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
         cairo_stroke(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
         cairo_restore(cr);
 
-        vowely += vowelstep;
         break;
     default:
         cout << "unknown vowel: " << c << endl;
@@ -416,22 +427,27 @@ void render_monopthong(char c, float vowelx) {
 }
 
 void render_i_dipthong(char c, float vowelx) {
+    float x = vowelx;
+    float y = vowely;
+
     switch (c) {
     case 'e':   // !e ei say
+        //x -= halfstep * sqrt(3)/2 /2;
+        //y -= halfstep/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
         cairo_move_to(cr, vowelx, vowely);
         cairo_rel_line_to(cr, -halfstep, 0);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
-        vowely += vowelstep;
         break;
     case 'a':   // !a ai site
+        //x 
+        //y -= halfstep /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
         cairo_move_to(cr, vowelx, vowely);
         cairo_rel_line_to(cr, 0, halfstep);
         cairo_rel_line_to(cr, -halfstep * sqrt(3)/2, -halfstep/2);
-        vowely += vowelstep;
         break;
     case 'o':   // !o oi soy
         cairo_new_sub_path(cr);
@@ -439,7 +455,6 @@ void render_i_dipthong(char c, float vowelx) {
         cairo_move_to(cr, vowelx, vowely);
         cairo_rel_line_to(cr, halfstep, 0);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
-        vowely += vowelstep;
         break;
     default:
         cout << "unknown i dipthong: " << c << endl;
@@ -455,7 +470,6 @@ void render_u_dipthong(char c, float vowelx) {
         cairo_move_to(cr, vowelx, vowely);
         cairo_rel_line_to(cr, 0, halfstep);
         cairo_rel_line_to(cr, halfstep * sqrt(3)/2, -halfstep/2);
-        vowely += vowelstep;
         break;
     case 'o':   // ^o ou low
         cairo_move_to(cr, vowelx, vowely);
@@ -472,7 +486,6 @@ void render_u_dipthong(char c, float vowelx) {
         cairo_fill(cr);
         cairo_restore(cr);
 
-        vowely += vowelstep;
         break;
     default:
         cout << "unknown u dipthong: " << c << endl;
@@ -549,10 +562,10 @@ void render_word(string w) {
         return;
     }
 
-    if (w[0] != '`') riby += ribstep/2; //TODO vowel adjacent
+    if (w[0] != '`') riby += ribstep/2;
 
     int ix = 0;
-    int nextrib_ix;
+    int nextrib_ix, lastrib_ix;
     while (ix < w.length()) {
         nextrib_ix = ix + 1;
         while (nextrib_ix<w.length() && vowel(w[nextrib_ix])) nextrib_ix += 1;
@@ -578,34 +591,47 @@ void render_word(string w) {
         }
         else {
             // no next rib
+            lastrib_ix = ix;
         }
 
-        spine_attach_t prev_attach = spine_attach(w[ix]);
-        float prevy = prev_riby - prev_attach.after;
-        float nexty;
-        if (nextrib_ix < w.length()) {
-            spine_attach_t next_attach = spine_attach(w[nextrib_ix]);
-            nexty = riby + next_attach.before;
-        }
-        else nexty = riby;
-        vowely = (prevy + nexty) / 2;
+        if (nextrib_ix < w.length() && vowel(w[ix+1])) {
+            if (w[ix] == '`') vowely = prev_riby - halfstep/2;
+            else if (w[nextrib_ix] == '`') vowely = riby + halfstep/2;
+            else {
+                float prevy, nexty;
 
-        for (int vix=ix+1 ; vix<nextrib_ix ; vix+=1) {
+                if (voiced(w[ix])) {
+                    prevy = prev_riby + LINE_WIDTH;
+                    riby += voicedlen/2 + LINE_WIDTH;
+                }
+                else prevy = prev_riby - vowel_space(w[ix]).after;
+
+                if (voiced(w[nextrib_ix])) {
+                    riby += voicedlen/2 + LINE_WIDTH;
+                    nexty = riby - LINE_WIDTH;
+                }
+                else nexty = riby + vowel_space(w[nextrib_ix]).before;
+
+                vowely = (prevy + nexty) / 2;
+            }
+
             float vowelx = markx;
-            if (w[vix] == '!') render_i_dipthong(w[++vix], vowelx);
-            else if (w[vix] == '^') render_u_dipthong(w[++vix], vowelx);
-            else render_monopthong(w[vix], vowelx);
+            if (w[ix+1] == '!') render_i_dipthong(w[ix+2], vowelx);
+            else if (w[ix+1] == '^') render_u_dipthong(w[ix+2], vowelx);
+            else render_monopthong(w[ix+1], vowelx);
         }
 
         ix = nextrib_ix;
     }
 
-    if (w.back() == '`') riby -= halfstep; //TODO vowel adjacent
+    if (w[lastrib_ix] == '`') riby -= halfstep;
     else riby += ribstep/2;
 
     cairo_move_to(cr, spinex, starty);
     cairo_line_to(cr, spinex, riby);
     cairo_stroke(cr);
+
+    if (w[lastrib_ix] == '`') riby += halfstep;
 }
 
 void render_words(vector<string> ws) {
@@ -626,6 +652,11 @@ vector<string> split_words(string text) {
     return ws;
 }
 
+void render_column(string text) {
+    new_column();
+    render_words(split_words(text));
+}
+
 int main(int nargs, char * args[])
 {
     cairo_surface_t * csurf = cairo_pdf_surface_create(
@@ -635,27 +666,24 @@ int main(int nargs, char * args[])
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
-    cairo_set_line_width(cr, 0.01);
+    cairo_set_line_width(cr, LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
     cur_col = 0;
 
-    new_column();
-    render_words(split_words("pr!ad `nt prEdZds b` dZen `astn"));
+    render_column("t!et!at!ot^at^o`");
 
-    new_column();
-    render_words(split_words("`t `s A trT yunfrsl` `knltSt Tt A sNkl mn `n psSn `f A gd frtSn mst b `n wnt `f A w!af"));
+    render_column("pr!ad `nt prEdZds b` dZen `astn");
 
-    new_column();
-    render_words(split_words("h^awfr ltl n^on T flNs `r vys `f stS A mn m` b `an hs frst `EntrN A nbrhd Ts trT"));
+    render_column("`t `s A trT yunfrsl` `knltSt Tt A sNkl mn `n psSn `f A gd frtSn mst b `n wnt `f A w!af");
 
-    new_column();
-    render_words(split_words("`s s wl fkst `n T mnds `f T srntN fmls Tt h `s knstrt T r!atfUl prprt` `f sm wn"));
+    render_column("h^awfr ltl n^on T flNs `r vys `f stS A mn m` b `an hs frst `EntrN A nbrhd Ts trT");
 
-    new_column();
-    render_words(split_words("`r `Tr `f Tr dtrs"));
+    render_column("`s s wl fkst `n T mnds `f T srntN fmls Tt h `s knstrt T r!atfUl prprt` `f sm wn");
+
+    render_column("`r `Tr `f Tr dtrs");
 
     cairo_surface_show_page(csurf);
 
