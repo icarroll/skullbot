@@ -18,8 +18,8 @@ void die(string message) {
 
 const float POINTS_PER_INCH = 72.0;
 
-const float PAPER_WIDTH = 8.5;
-const float PAPER_HEIGHT = 11;
+const float PAPER_WIDTH = 5.5;
+const float PAPER_HEIGHT = 8.5;
 
 const float MARGIN = 1.0;
 
@@ -29,7 +29,6 @@ const float COLUMN_HEIGHT = (11 - MARGIN) / ROWS_PER_PAGE - MARGIN;
 
 cairo_t * cr;
 
-float LINE_WIDTH = 0.01;
 float unit = 1.0/5.0;
 
 float step = unit/4;
@@ -236,7 +235,7 @@ fills_t consonant_fills(char c) {
         return {false, false, true, false, true, true};
         break;
     case 'n':
-        return {false, true, false, true, true, true}; // ??? c_bot=?
+        return {false, true, false, true, true, true};
         break;
     case 'N':
         return {true, false, false, true, true, false};
@@ -281,11 +280,11 @@ vowel_space_t vowel_space(char c) {
         return {0,0};
         break;
     case 'w':
-        return {step,0};
+        return {0,0};
         break;
     case 'l':
     case 'r':
-        return {elstep,elstep};
+        return {0,elstep};
         break;
     case 'y':
         return {0,step};
@@ -293,7 +292,7 @@ vowel_space_t vowel_space(char c) {
     case 'm':
     case 'n':
     case 'N':
-        return {0,0};
+        return {step/4,0};
         break;
     case '`':
         return {0,halfstep};
@@ -565,17 +564,20 @@ void render_word(string w) {
     if (w[0] != '`') riby += ribstep/2;
 
     int ix = 0;
-    int nextrib_ix, lastrib_ix;
+    int lastrib_ix;
     while (ix < w.length()) {
-        nextrib_ix = ix + 1;
+        int nextrib_ix = ix + 1;
         while (nextrib_ix<w.length() && vowel(w[nextrib_ix])) nextrib_ix += 1;
 
+        float prerib_riby = riby;
         if (w[ix] == '`') render_vowel_hook();
         else render_consonant(w[ix]);
+        float rib_height = riby - prerib_riby;
+
+        float pregap_riby = riby;
+
+        // do current and next ribs need a gap?
         fills_t fills = consonant_fills(w[ix]);
-
-        float prev_riby = riby;
-
         if (nextrib_ix<w.length()) {
             fills_t fills2 = consonant_fills(w[nextrib_ix]);
             if (fills.l_bot && fills2.l_top
@@ -594,23 +596,34 @@ void render_word(string w) {
             lastrib_ix = ix;
         }
 
+        // render vowel if any
         if (nextrib_ix < w.length() && vowel(w[ix+1])) {
-            if (w[ix] == '`') vowely = prev_riby - halfstep/2;
+            // there's a vowel then a following rib
+            if (w[ix] == '`') vowely = pregap_riby - halfstep/2;
             else if (w[nextrib_ix] == '`') vowely = riby + halfstep/2;
             else {
+                // next rib is a consonant
                 float prevy, nexty;
 
+                // this only works because voiced ribs never have vowel space
                 if (voiced(w[ix])) {
-                    prevy = prev_riby + LINE_WIDTH;
-                    riby += voicedlen/2 + LINE_WIDTH;
+                    prevy = pregap_riby - rib_height/2 + voicedlen/2;
                 }
-                else prevy = prev_riby - vowel_space(w[ix]).after;
+                else prevy = pregap_riby - vowel_space(w[ix]).after;
 
                 if (voiced(w[nextrib_ix])) {
-                    riby += voicedlen/2 + LINE_WIDTH;
-                    nexty = riby - LINE_WIDTH;
+                    //TODO assume 0 because we don't know height of next rib
+                    nexty = riby + 0/2 - voicedlen/2;
                 }
                 else nexty = riby + vowel_space(w[nextrib_ix]).before;
+
+                float vowel_room = nexty - prevy;
+                float vowel_needs = halfstep + dotrad*2;
+                if (vowel_room < vowel_needs) {
+                    float skootch = vowel_needs - vowel_room;
+                    riby += skootch;
+                    nexty += skootch;
+                }
 
                 vowely = (prevy + nexty) / 2;
             }
@@ -666,14 +679,12 @@ int main(int nargs, char * args[])
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
-    cairo_set_line_width(cr, LINE_WIDTH);
+    cairo_set_line_width(cr, 0.01);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
     cur_col = 0;
-
-    render_column("t!et!at!ot^at^o`");
 
     render_column("pr!ad `nt prEdZds b` dZen `astn");
 
