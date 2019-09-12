@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -431,56 +432,66 @@ void render_i_dipthong(char c, float vowelx) {
 
     switch (c) {
     case 'e':   // !e ei say
-        //x -= halfstep * sqrt(3)/2 /2;
-        //y -= halfstep/2 /2;
+        x += halfstep /2 + halfstep/2 /2;
+        y += halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep, 0);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
         break;
     case 'a':   // !a ai site
-        //x 
-        //y -= halfstep /2;
+        x += halfstep * sqrt(3)/2 /2;
+        y -= halfstep /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, 0, halfstep);
         cairo_rel_line_to(cr, -halfstep * sqrt(3)/2, -halfstep/2);
         break;
     case 'o':   // !o oi soy
+        x -= halfstep /2;
+        y += halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep, 0);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
         break;
     default:
         cout << "unknown i dipthong: " << c << endl;
+        return;
         break;
     }
 }
 
 void render_u_dipthong(char c, float vowelx) {
+    float x = vowelx;
+    float y = vowely;
+
     switch (c) {
     case 'a':   // ^a au south
+        x -= halfstep * sqrt(3)/2 /2;
+        y -= halfstep /2;
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
-        cairo_move_to(cr, vowelx, vowely);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, 0, halfstep);
         cairo_rel_line_to(cr, halfstep * sqrt(3)/2, -halfstep/2);
         break;
     case 'o':   // ^o ou low
-        cairo_move_to(cr, vowelx, vowely);
+        x -= halfstep /2 + halfstep/2 /2;
+        y += halfstep * sqrt(3)/2 /2;
+        cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep, 0);
         cairo_rel_line_to(cr, halfstep/2, -halfstep * sqrt(3)/2);
 
         cairo_save(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad*2, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
         cairo_stroke(cr);
         cairo_new_sub_path(cr);
-        cairo_arc(cr, vowelx, vowely, dotrad, 0, 2*M_PI);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
         cairo_restore(cr);
@@ -685,6 +696,12 @@ int main(int nargs, char * args[])
     cairo_set_source_rgb(cr, 0,0,0);
 
     cur_col = 0;
+
+    /*
+    render_column("l!af bfr dT");
+    render_column("strNT bfr wkns");
+    render_column("dZrn` bfr pnkks");
+    */
 
     render_column("pr!ad `nt prEdZds b` dZen `astn");
 
