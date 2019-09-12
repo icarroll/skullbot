@@ -681,6 +681,20 @@ void render_column(string text) {
     render_words(split_words(text));
 }
 
+void render_skullbat(float width, float x, float y) {
+    cairo_surface_t * skullbat =
+        cairo_image_surface_create_from_png("skullbat.png");
+    cairo_save(cr);
+    int w = cairo_image_surface_get_width(skullbat);
+    cairo_translate(cr, x, y);
+    cairo_scale(cr, width /w, width /w);
+    cairo_set_source_surface(cr, skullbat, 0,0);
+    cairo_paint(cr);
+    cairo_restore(cr);
+    cairo_surface_destroy(skullbat);
+
+}
+
 int main(int nargs, char * args[])
 {
     cairo_surface_t * csurf = cairo_pdf_surface_create(
@@ -689,6 +703,8 @@ int main(int nargs, char * args[])
         PAPER_HEIGHT * POINTS_PER_INCH);
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
+
+    render_skullbat(1.75, 2.75, 1);
 
     cairo_set_line_width(cr, 0.01);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
