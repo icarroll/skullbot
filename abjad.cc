@@ -1,6 +1,9 @@
+#include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -564,7 +567,7 @@ void render_vowel_word(string w) {
     cairo_stroke(cr);
 }
 
-void render_word(string w) {
+void render_phonetic_word(string w) {
     riby = starty;
 
     if (vowel(w[0])) {
@@ -658,11 +661,32 @@ void render_word(string w) {
     if (w[lastrib_ix] == '`') riby += halfstep;
 }
 
-void render_words(vector<string> ws) {
+void render_phonetic_words(vector<string> ws) {
     for (auto w : ws) {
-        render_word(w);
+        render_phonetic_word(w);
         starty = riby + wordstep;
     }
+}
+
+map<string, string> pronunciation;
+
+string phoneticize_word(string w) {
+    for (auto & c : w) c = tolower(c);
+    if (ispunct(w.back())) w.pop_back();
+
+    if (pronunciation.count(w)) return pronunciation[w];
+
+    cout << "unknown word: " << w << endl;
+    return "O"; //TODO big red mark for unknown word
+}
+
+vector<string> phoneticize_words(vector<string> ws) {
+    vector<string> ps;
+    for (auto w : ws) {
+        string p = phoneticize_word(w);
+        ps.push_back(p);
+    }
+    return ps;
 }
 
 vector<string> split_words(string text) {
@@ -678,7 +702,7 @@ vector<string> split_words(string text) {
 
 void render_column(string text) {
     new_column();
-    render_words(split_words(text));
+    render_phonetic_words(phoneticize_words(split_words(text)));
 }
 
 void render_skullbat(float width, float x, float y) {
@@ -695,8 +719,18 @@ void render_skullbat(float width, float x, float y) {
 
 }
 
+void load_phonetic() {
+    ifstream phonetics("pronunciation.txt");
+    string word, phonetic;
+    while (phonetics >> word >> phonetic) {
+        pronunciation[word] = phonetic;
+    }
+}
+
 int main(int nargs, char * args[])
 {
+    load_phonetic();
+
     cairo_surface_t * csurf = cairo_pdf_surface_create(
         "abjad.pdf",
         PAPER_WIDTH * POINTS_PER_INCH,
@@ -719,15 +753,16 @@ int main(int nargs, char * args[])
     render_column("dZrn` bfr pnkks");
     */
 
+    /*
     render_column("pr!ad `nt prEdZds b` dZen `astn");
-
     render_column("`t `s A trT yunfrsl` `knltSt Tt A sNkl mn `n psSn `f A gd frtSn mst b `n wnt `f A w!af");
-
     render_column("h^awfr ltl n^on T flNs `r vys `f stS A mn m` b `an hs frst `EntrN A nbrhd Ts trT");
-
     render_column("`s s wl fkst `n T mnds `f T srntN fmls Tt h `s knstrt T r!atfUl prprt` `f sm wn");
-
     render_column("`r `Tr `f Tr dtrs");
+    */
+
+    render_column("it is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife");
+    render_column("Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.");
 
     cairo_surface_show_page(csurf);
 
