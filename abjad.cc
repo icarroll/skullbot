@@ -674,6 +674,8 @@ string phoneticize_word(string w) {
     for (auto & c : w) c = tolower(c);
     if (ispunct(w.back())) w.pop_back();
 
+    if (w == "a" || w == "i" || w == "oh") return string(1, toupper(w[0]));
+
     if (pronunciation.count(w)) return pronunciation[w];
 
     cout << "unknown word: " << w << endl;
@@ -762,7 +764,9 @@ int main(int nargs, char * args[])
     */
 
     render_column("it is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife");
-    render_column("Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.");
+    render_column("Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise");
+    render_column("and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants");
+    render_column("are to be in the house by the end of next week.");
 
     cairo_surface_show_page(csurf);
 
