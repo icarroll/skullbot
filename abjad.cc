@@ -29,7 +29,7 @@ const float MARGIN = 1.0;
 
 const float ROWS_PER_PAGE = 2;
 
-const float COLUMN_HEIGHT = (11 - MARGIN) / ROWS_PER_PAGE - MARGIN;
+const float COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
 
 cairo_t * cr;
 
@@ -59,6 +59,7 @@ float markx;
 float starty;
 float riby;
 float vowely;
+float col_bot;
 
 void new_column() {
     spinex = MARGIN + step + cur_col++*colstep;
@@ -68,6 +69,8 @@ void new_column() {
 
     starty = MARGIN;
     riby = starty;
+
+    col_bot = starty + COLUMN_HEIGHT - MARGIN/2;
 }
 
 void render_voice_mark(float offset=0.0) {
@@ -661,11 +664,21 @@ void render_phonetic_word(string w) {
     if (w[lastrib_ix] == '`') riby += halfstep;
 }
 
-void render_phonetic_words(vector<string> ws) {
-    for (auto w : ws) {
+void render_phonetic_words(vector<string> & ws) {
+    for (auto it=ws.begin() ; it!=ws.end() ; ++it) {
+        auto w = * it;
         render_phonetic_word(w);
         starty = riby + wordstep;
+        //TODO move this into render_column
+        if (starty >= col_bot) {
+            ws.assign(++it, ws.end());
+            // cout << "remaining after column: ";
+            // for (auto w : ws) cout << w << " ";
+            // cout << endl;
+            return;
+        }
     }
+    ws.clear();
 }
 
 map<string, string> pronunciation;
@@ -679,7 +692,7 @@ string phoneticize_word(string w) {
     if (pronunciation.count(w)) return pronunciation[w];
 
     cout << "unknown word: " << w << endl;
-    return "O"; //TODO big red mark for unknown word
+    return "trololol"; //TODO big red mark for unknown word
 }
 
 vector<string> phoneticize_words(vector<string> ws) {
@@ -702,9 +715,26 @@ vector<string> split_words(string text) {
     return ws;
 }
 
-void render_column(string text) {
+void render_column(vector<string> & ps) {
     new_column();
-    render_phonetic_words(phoneticize_words(split_words(text)));
+    render_phonetic_words(ps);
+    // cout << "after column: ";
+    // for (auto p : ps) cout << p << " ";
+    // cout << endl;
+    // cout << "got to line " << __LINE__ << endl;
+}
+
+void render_columns(string text) {
+    vector<string> ws = split_words(text);
+    vector<string> ps = phoneticize_words(ws);
+    while (ps.size()) {
+        // cout << "before column: ";
+        // for (auto p : ps) cout << p << " ";
+        // cout << endl;
+        render_column(ps);
+        // cout << "got to line " << __LINE__ << endl;
+        // cout << "ps.size() = " << ps.size() << endl;
+    }
 }
 
 void render_skullbat(float width, float x, float y) {
@@ -740,7 +770,7 @@ int main(int nargs, char * args[])
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
-    render_skullbat(1.75, 2.75, 1);
+    render_skullbat(0.5, MARGIN/3, MARGIN);
 
     cairo_set_line_width(cr, 0.01);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -749,24 +779,8 @@ int main(int nargs, char * args[])
 
     cur_col = 0;
 
-    /*
-    render_column("l!af bfr dT");
-    render_column("strNT bfr wkns");
-    render_column("dZrn` bfr pnkks");
-    */
-
-    /*
-    render_column("pr!ad `nt prEdZds b` dZen `astn");
-    render_column("`t `s A trT yunfrsl` `knltSt Tt A sNkl mn `n psSn `f A gd frtSn mst b `n wnt `f A w!af");
-    render_column("h^awfr ltl n^on T flNs `r vys `f stS A mn m` b `an hs frst `EntrN A nbrhd Ts trT");
-    render_column("`s s wl fkst `n T mnds `f T srntN fmls Tt h `s knstrt T r!atfUl prprt` `f sm wn");
-    render_column("`r `Tr `f Tr dtrs");
-    */
-
-    render_column("it is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife");
-    render_column("Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise");
-    render_column("and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants");
-    render_column("are to be in the house by the end of next week.");
+    render_columns("it is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife");
+    render_columns("Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.");
 
     cairo_surface_show_page(csurf);
 
