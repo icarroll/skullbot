@@ -548,6 +548,44 @@ bool voiced(char c) {
     }
 }
 
+bool logogram(char c) {
+    switch (c) {
+    case '&':
+        return true;
+        break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+        return true;
+        break;
+    default:
+        return false;
+        break;
+    }
+}
+
+void render_logogram_word(string w) {
+    if (w == "&") {
+        cairo_new_sub_path(cr);
+        cairo_arc_negative(cr, spinex-halfstep,riby, halfstep, M_PI,2*M_PI);
+        cairo_rel_line_to(cr, 0, step);
+        cairo_rel_curve_to(cr, 0,step, -step,0, 0,0);
+        cairo_rel_curve_to(cr, halfstep,0, halfstep,step, 0,step);
+        cairo_rel_line_to(cr, -step, 0);
+        riby += step*2;
+    }
+    else cout << "unknown logogram word: " << w << endl;
+
+    cairo_stroke(cr);
+}
+
 void render_vowel_word(string w) {
     if (w == "A") {
         cairo_new_sub_path(cr);
@@ -565,13 +603,18 @@ void render_vowel_word(string w) {
         cairo_arc(cr, spinex,riby, halfstep, 0,2*M_PI);
         riby += halfstep;
     }
-    else cout << "unknown vowel word: " << w;
+    else cout << "unknown vowel word: " << w << endl;
 
     cairo_stroke(cr);
 }
 
 void render_phonetic_word(string w) {
     riby = starty;
+
+    if (logogram(w[0])) {
+        render_logogram_word(w);
+        return;
+    }
 
     if (vowel(w[0])) {
         render_vowel_word(w);
@@ -759,6 +802,17 @@ void load_phonetic() {
     }
 }
 
+void render_midline() {
+    cairo_save(cr);
+    cairo_set_line_width(cr, 0.005);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
+    cairo_set_source_rgb(cr, 0.5,0.5,0.5);
+    cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
+    cairo_line_to(cr, PAPER_WIDTH-MARGIN,PAPER_HEIGHT/2);
+    cairo_stroke(cr);
+    cairo_restore(cr);
+}
+
 int main(int nargs, char * args[])
 {
     load_phonetic();
@@ -771,6 +825,8 @@ int main(int nargs, char * args[])
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
     render_skullbat(0.5, MARGIN/3, MARGIN);
+
+    render_midline();
 
     cairo_set_line_width(cr, 0.01);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
