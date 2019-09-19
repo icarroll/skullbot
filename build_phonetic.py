@@ -6,19 +6,25 @@ commons = dict(lw(*line.split()) for line in open("common_5000.txt").readlines()
 extras = {
     "netherfield": "nETrfild",
     "michaelmas": "mIklms",
+    "pemberley": "pEmbrl`",
+    "lambton": "lAmtn",
+    "curricle": "kUrkl",
+    "acquainting": "`kw!antN",
+    "newlyborn": "nulbrn",
+    "discomposure": "dskmpoZr",
 }
 
 def xlat1(c):
     if c.startswith("AA"): return "a"
     if c.startswith("AE"): return "A"
     if c.startswith("AH"): return "O"
-    if c.startswith("AO"): return "o"
+    if c.startswith("AO"): return "o" #??? /a/?
     if c.startswith("AW"): return "^a"
     if c.startswith("AX"): return "O"   # I can't believe it's not schwa!
-    if c.startswith("AXR"): return "r" #XXX may need a vowel
+    if c.startswith("AXR"): return "Or"
     if c.startswith("AY"): return "!a"
     if c.startswith("EH"): return "E"
-    if c.startswith("ER"): return "r" #XXX may need a vowel
+    if c.startswith("ER"): return "Er"
     if c.startswith("EY"): return "!e"
     if c.startswith("IH"): return "I"
     if c.startswith("IX"): return "I"
@@ -48,7 +54,7 @@ def xlat1(c):
     if c == "NG": return "N"
     if c == "NX": return "n"   # flapped N?
     if c == "P": return "p"
-    if c == "Q": return ""   # glottal stop, unused in cmudict
+    if c == "Q": return "X"   # glottal stop, unused in cmudict
     if c == "R": return "r"
     if c == "S": return "s"
     if c == "SH": return "S"

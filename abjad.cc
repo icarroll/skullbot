@@ -44,6 +44,7 @@ float wordstep = step;
 float colstep = 3*unit/2;
 
 int cur_col;
+int cur_row;
 
 float elstep = step * sqrt(2)/2;
 
@@ -67,10 +68,16 @@ void new_column() {
     rightx = spinex + step;
     markx = rightx + halfstep;
 
-    starty = MARGIN;
+    starty = (cur_row == 0 ? MARGIN : MARGIN/2) + cur_row * PAPER_HEIGHT/ROWS_PER_PAGE;
     riby = starty;
 
-    col_bot = starty + COLUMN_HEIGHT - MARGIN/2;
+    col_bot = starty + COLUMN_HEIGHT;
+}
+
+void new_row() {
+    cur_row += 1;
+    cur_col = 0;
+    new_column();
 }
 
 void render_voice_mark(float offset=0.0) {
@@ -649,6 +656,7 @@ void render_phonetic_word(string w) {
             }
             else {
                 // no gap
+                //XXX experiment with small gap due to eg "disquiet"
             }
         }
         else {
@@ -713,11 +721,8 @@ void render_phonetic_words(vector<string> & ws) {
         render_phonetic_word(w);
         starty = riby + wordstep;
         //TODO move this into render_column
-        if (starty >= col_bot) {
+        if (starty > col_bot) {
             ws.assign(++it, ws.end());
-            // cout << "remaining after column: ";
-            // for (auto w : ws) cout << w << " ";
-            // cout << endl;
             return;
         }
     }
@@ -726,11 +731,11 @@ void render_phonetic_words(vector<string> & ws) {
 
 map<string, string> pronunciation;
 
-string phoneticize_word(string w) {
-    for (auto & c : w) c = tolower(c);
-    if (ispunct(w.back())) w.pop_back();
+string phoneticize_word(string raw_w) {
+    string w;
+    for (char c : raw_w) if (isalpha(c) || c == '\'') w.push_back(tolower(c));
 
-    if (w == "a" || w == "i" || w == "oh") return string(1, toupper(w[0]));
+    //if (w == "a" || w == "i" || w == "oh") return string(1, toupper(w[0]));
 
     if (pronunciation.count(w)) return pronunciation[w];
 
@@ -751,36 +756,23 @@ vector<string> split_words(string text) {
     istringstream iss(text);
     vector<string> ws;
     string w;
-    while (iss >> w) {
-        ws.push_back(w);
-    }
-
+    while (iss >> w) ws.push_back(w);
     return ws;
 }
 
 void render_column(vector<string> & ps) {
     new_column();
+    if (spinex > PAPER_WIDTH-MARGIN-step-halfstep) new_row();
     render_phonetic_words(ps);
-    // cout << "after column: ";
-    // for (auto p : ps) cout << p << " ";
-    // cout << endl;
-    // cout << "got to line " << __LINE__ << endl;
 }
 
 void render_columns(string text) {
     vector<string> ws = split_words(text);
     vector<string> ps = phoneticize_words(ws);
-    while (ps.size()) {
-        // cout << "before column: ";
-        // for (auto p : ps) cout << p << " ";
-        // cout << endl;
-        render_column(ps);
-        // cout << "got to line " << __LINE__ << endl;
-        // cout << "ps.size() = " << ps.size() << endl;
-    }
+    while (ps.size()) render_column(ps);
 }
 
-void render_skullbat(float width, float x, float y) {
+void draw_skull_bat(float width, float x, float y) {
     cairo_surface_t * skullbat =
         cairo_image_surface_create_from_png("skullbat.png");
     cairo_save(cr);
@@ -800,6 +792,14 @@ void load_phonetic() {
     while (phonetics >> word >> phonetic) {
         pronunciation[word] = phonetic;
     }
+}
+
+vector<string> load_text(string filename) {
+    ifstream text(filename);
+    vector<string> lines;
+    string line;
+    while (getline(text, line)) lines.push_back(line);
+    return lines;
 }
 
 void render_midline() {
@@ -824,7 +824,7 @@ int main(int nargs, char * args[])
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
-    render_skullbat(0.5, MARGIN/3, MARGIN);
+    draw_skull_bat(0.5, MARGIN/3, MARGIN);
 
     render_midline();
 
@@ -833,10 +833,11 @@ int main(int nargs, char * args[])
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
+    cur_row = 0;
     cur_col = 0;
 
-    render_columns("it is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife");
-    render_columns("Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.");
+    vector<string> paras = load_text("other_text.txt");
+    for (string para : paras) render_columns(para);
 
     cairo_surface_show_page(csurf);
 
