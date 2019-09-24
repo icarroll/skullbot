@@ -12,6 +12,9 @@ extras = {
     "acquainting": "`kw!antN",
     "newlyborn": "nulbrn",
     "discomposure": "dskmpoZr",
+    "overscrupulous": "`vrskrpyls",
+    "goodhumoured": "gdhmrd",
+    "threeandtwenty": "Tri` & twnt`",
 }
 
 def xlat1(c):

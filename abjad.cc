@@ -32,6 +32,7 @@ const float ROWS_PER_PAGE = 2;
 const float COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
 
 cairo_t * cr;
+cairo_surface_t * csurf;
 
 float unit = 1.0/5.0;
 
@@ -63,7 +64,8 @@ float vowely;
 float col_bot;
 
 void new_column() {
-    spinex = MARGIN + step + cur_col++*colstep;
+    spinex = MARGIN + step + cur_col*colstep;
+    cur_col += 1;
     leftx = spinex - step;
     rightx = spinex + step;
     markx = rightx + halfstep;
@@ -74,10 +76,33 @@ void new_column() {
     col_bot = starty + COLUMN_HEIGHT;
 }
 
-void new_row() {
-    cur_row += 1;
+void new_page() {
+    cairo_surface_show_page(csurf);
+
+    cur_row = 0;
     cur_col = 0;
     new_column();
+}
+
+void render_midline() {
+    cairo_save(cr);
+    cairo_set_line_width(cr, 0.005);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
+    cairo_set_source_rgb(cr, 0.5,0.5,0.5);
+    cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
+    cairo_line_to(cr, PAPER_WIDTH-MARGIN,PAPER_HEIGHT/2);
+    cairo_stroke(cr);
+    cairo_restore(cr);
+}
+
+void new_row() {
+    render_midline();
+
+    cur_row += 1;
+    cur_col = 0;
+
+    if (cur_row >= ROWS_PER_PAGE) new_page();
+    else new_column();
 }
 
 void render_voice_mark(float offset=0.0) {
@@ -739,7 +764,7 @@ string phoneticize_word(string raw_w) {
 
     if (pronunciation.count(w)) return pronunciation[w];
 
-    cout << "unknown word: " << w << endl;
+    cout << "unknown word: " << raw_w << endl;
     return "trololol"; //TODO big red mark for unknown word
 }
 
@@ -802,22 +827,11 @@ vector<string> load_text(string filename) {
     return lines;
 }
 
-void render_midline() {
-    cairo_save(cr);
-    cairo_set_line_width(cr, 0.005);
-    cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
-    cairo_set_source_rgb(cr, 0.5,0.5,0.5);
-    cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
-    cairo_line_to(cr, PAPER_WIDTH-MARGIN,PAPER_HEIGHT/2);
-    cairo_stroke(cr);
-    cairo_restore(cr);
-}
-
 int main(int nargs, char * args[])
 {
     load_phonetic();
 
-    cairo_surface_t * csurf = cairo_pdf_surface_create(
+    csurf = cairo_pdf_surface_create(
         "abjad.pdf",
         PAPER_WIDTH * POINTS_PER_INCH,
         PAPER_HEIGHT * POINTS_PER_INCH);
@@ -825,8 +839,6 @@ int main(int nargs, char * args[])
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
     draw_skull_bat(0.5, MARGIN/3, MARGIN);
-
-    render_midline();
 
     cairo_set_line_width(cr, 0.01);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -836,7 +848,7 @@ int main(int nargs, char * args[])
     cur_row = 0;
     cur_col = 0;
 
-    vector<string> paras = load_text("other_text.txt");
+    vector<string> paras = load_text("text.txt");
     for (string para : paras) render_columns(para);
 
     cairo_surface_show_page(csurf);
