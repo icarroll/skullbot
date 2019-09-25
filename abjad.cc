@@ -81,7 +81,6 @@ void new_page() {
 
     cur_row = 0;
     cur_col = 0;
-    new_column();
 }
 
 void render_midline() {
@@ -102,7 +101,7 @@ void new_row() {
     cur_col = 0;
 
     if (cur_row >= ROWS_PER_PAGE) new_page();
-    else new_column();
+    new_column();
 }
 
 void render_voice_mark(float offset=0.0) {
@@ -585,18 +584,6 @@ bool logogram(char c) {
     case '&':
         return true;
         break;
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-        return true;
-        break;
     default:
         return false;
         break;
@@ -640,6 +627,90 @@ void render_vowel_word(string w) {
     cairo_stroke(cr);
 }
 
+void render_digit(char c) {
+    switch (c) {
+    case '0':
+        cairo_move_to(cr, spinex-halfstep, riby);
+        cairo_line_to(cr, spinex+halfstep, riby);
+        cairo_line_to(cr, spinex+halfstep/2, riby+step/3);
+        cairo_curve_to(cr, spinex+halfstep,riby+step/3, spinex+halfstep,riby+step, spinex,riby+step);
+        cairo_curve_to(cr, spinex-step/3,riby+step, spinex-halfstep,riby+2*step/3, spinex-step/3,riby+halfstep);
+        riby += step;
+        break;
+    case '1':
+        cairo_move_to(cr, spinex, riby);
+        cairo_line_to(cr, spinex, riby+step);
+        riby += step;
+        break;
+    case '2':
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex+halfstep/2,riby, halfstep/2, 0,M_PI);
+        cairo_line_to(cr, spinex, riby+step);
+        riby += step;
+        break;
+    case '3':
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex+3*halfstep/2,riby, halfstep/2, 0,M_PI);
+        cairo_arc(cr, spinex+halfstep/2,riby, halfstep/2, 0,M_PI);
+        cairo_line_to(cr, spinex, riby+step);
+        riby += step;
+        break;
+    case '4':
+        cairo_move_to(cr, spinex+3*halfstep/2, riby);
+        cairo_line_to(cr, spinex+halfstep, riby+halfstep);
+        cairo_rel_curve_to(cr, 0,-3*halfstep/2, -halfstep,-3*halfstep/2, -halfstep,0);
+        cairo_line_to(cr, spinex, riby+step);
+        riby += step;
+        break;
+    case '5':
+        cairo_move_to(cr, spinex+halfstep, riby);
+        cairo_line_to(cr, spinex, riby+halfstep);
+        cairo_rel_curve_to(cr, step,0, -halfstep/2,halfstep, -halfstep/2,halfstep);
+        riby += step;
+        break;
+    case '6':
+        cairo_move_to(cr, spinex+halfstep, riby+halfstep);
+        cairo_rel_curve_to(cr, -step*2,0, 0,-step, 0,0);
+        cairo_rel_curve_to(cr, 0,halfstep, -step,halfstep, -step,halfstep);
+        cairo_line_to(cr, spinex+halfstep, riby+step);
+        riby += step;
+        break;
+    case '7':
+        cairo_move_to(cr, spinex-halfstep, riby);
+        cairo_curve_to(cr, spinex,riby+halfstep/2, spinex,riby+halfstep/2, spinex+halfstep,riby+halfstep/4);
+        cairo_curve_to(cr, spinex+step,riby, spinex+step/2,riby-step/2+halfstep/8, spinex+halfstep,riby+halfstep/4);
+        cairo_line_to(cr, spinex, riby+step);
+        cairo_line_to(cr, spinex-halfstep, riby+halfstep);
+        riby += step;
+        break;
+    case '8':
+        cairo_move_to(cr, spinex-halfstep, riby);
+        cairo_curve_to(cr, spinex-halfstep,riby+halfstep, spinex+halfstep/2,riby+halfstep, spinex+halfstep/2,riby);
+        cairo_line_to(cr, spinex-halfstep, riby+step);
+        cairo_line_to(cr, spinex+halfstep, riby+step);
+        riby += step;
+        break;
+    case '9':
+        cairo_move_to(cr, spinex, riby+halfstep);
+        cairo_curve_to(cr, spinex-step,riby+halfstep/2, spinex,riby-halfstep, spinex,riby+halfstep);
+        cairo_line_to(cr, spinex, riby+step);
+        riby += step;
+        break;
+    default:
+        cout << "unknown digit: " << c << endl;
+        break;
+    }
+}
+
+void render_numeral(string w) {
+    for (char c : w) {
+        render_digit(c);
+        riby += wordstep/2;
+    }
+
+    cairo_stroke(cr);
+}
+
 void render_phonetic_word(string w) {
     riby = starty;
 
@@ -650,6 +721,11 @@ void render_phonetic_word(string w) {
 
     if (vowel(w[0])) {
         render_vowel_word(w);
+        return;
+    }
+
+    if (isdigit(w[0])) {
+        render_numeral(w);
         return;
     }
 
@@ -757,10 +833,12 @@ void render_phonetic_words(vector<string> & ws) {
 map<string, string> pronunciation;
 
 string phoneticize_word(string raw_w) {
+    if (isdigit(raw_w[0])) return raw_w;
+
     string w;
     for (char c : raw_w) if (isalpha(c) || c == '\'') w.push_back(tolower(c));
 
-    //if (w == "a" || w == "i" || w == "oh") return string(1, toupper(w[0]));
+    if (w.length() == 0) return "";
 
     if (pronunciation.count(w)) return pronunciation[w];
 
@@ -772,7 +850,7 @@ vector<string> phoneticize_words(vector<string> ws) {
     vector<string> ps;
     for (auto w : ws) {
         string p = phoneticize_word(w);
-        ps.push_back(p);
+        if (p.length() != 0) ps.push_back(p);
     }
     return ps;
 }
@@ -781,7 +859,14 @@ vector<string> split_words(string text) {
     istringstream iss(text);
     vector<string> ws;
     string w;
-    while (iss >> w) ws.push_back(w);
+    while (iss >> w) {
+        int ix;
+        while ((ix=w.find("-")) != -1) {
+            ws.push_back(w.substr(0,ix));
+            w = w.substr(ix+1);
+        }
+        ws.push_back(w);
+    }
     return ws;
 }
 
@@ -838,7 +923,7 @@ int main(int nargs, char * args[])
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
-    draw_skull_bat(0.5, MARGIN/3, MARGIN);
+    //draw_skull_bat(0.5, MARGIN/3, MARGIN);
 
     cairo_set_line_width(cr, 0.01);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -848,8 +933,11 @@ int main(int nargs, char * args[])
     cur_row = 0;
     cur_col = 0;
 
-    vector<string> paras = load_text("text.txt");
-    for (string para : paras) render_columns(para);
+    vector<string> paras = load_text("chapter03.txt");
+    for (string para : paras) {
+        //if (para.substr(0,7) == "Chapter") new_page();
+        render_columns(para);
+    }
 
     cairo_surface_show_page(csurf);
 

@@ -91,7 +91,7 @@ taking tekN
 took tUk
 taken tkn
 out `^at
-into `nt`
+into `Int`
 just dZst
 see si`
 him hm
@@ -492,7 +492,7 @@ sense
 build
 stay
 fall
-oh
+oh O
 nation
 plan
 cut
