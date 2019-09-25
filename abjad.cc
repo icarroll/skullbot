@@ -44,8 +44,8 @@ float vowelstep = ribstep;
 float wordstep = step;
 float colstep = 3*unit/2;
 
-int cur_col;
-int cur_row;
+int cur_col = 0;
+int cur_row = 0;
 
 float elstep = step * sqrt(2)/2;
 
@@ -76,8 +76,11 @@ void new_column() {
     col_bot = starty + COLUMN_HEIGHT;
 }
 
+bool first_page = true;
+
 void new_page() {
-    cairo_surface_show_page(csurf);
+    if (! first_page) cairo_surface_show_page(csurf);
+    first_page = false;
 
     cur_row = 0;
     cur_col = 0;
@@ -582,6 +585,7 @@ bool voiced(char c) {
 bool logogram(char c) {
     switch (c) {
     case '&':
+    case '@':
         return true;
         break;
     default:
@@ -599,6 +603,15 @@ void render_logogram_word(string w) {
         cairo_rel_curve_to(cr, halfstep,0, halfstep,step, 0,step);
         cairo_rel_line_to(cr, -step, 0);
         riby += step*2;
+    }
+    else if (w == "@@@") {
+        // red mark for unknown word
+        cairo_save(cr);
+        cairo_set_source_rgb(cr, 1,0,0);
+        cairo_rectangle(cr, spinex-halfstep,riby, step,step);
+        cairo_fill(cr);
+        cairo_restore(cr);
+        riby += step;
     }
     else cout << "unknown logogram word: " << w << endl;
 
@@ -843,7 +856,7 @@ string phoneticize_word(string raw_w) {
     if (pronunciation.count(w)) return pronunciation[w];
 
     cout << "unknown word: " << raw_w << endl;
-    return "trololol"; //TODO big red mark for unknown word
+    return "@@@"; // red mark for unknown word
 }
 
 vector<string> phoneticize_words(vector<string> ws) {
@@ -930,12 +943,9 @@ int main(int nargs, char * args[])
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
-    cur_row = 0;
-    cur_col = 0;
-
-    vector<string> paras = load_text("chapter03.txt");
+    vector<string> paras = load_text("chapter04.txt");
     for (string para : paras) {
-        //if (para.substr(0,7) == "Chapter") new_page();
+        if (para.substr(0,7) == "Chapter") new_page();
         render_columns(para);
     }
 

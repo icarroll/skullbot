@@ -36,6 +36,15 @@ extras = {
     "hurst's": "hUrsts",
     "fancying": "fAnsyN",
     "setdowns": "sEtdns",
+    "humoured": "hyumErd",
+    "censuring": "sEnSErN",
+    "candour": "kAndEr",
+    "pliancy": "pl!aOnsi`",
+    "unassailed": "`OnOs!eld",
+    "meanly": "minli`",
+    "easiness": "`izins",
+    "darcy's": "darsiz",
+    "meryton": "merItn",
 }
 
 def xlat1(c):
