@@ -8,12 +8,12 @@ extras = {
     "michaelmas": "mIklms",
     "pemberley": "pEmbrl`",
     "lambton": "lAmtn",
-    "curricle": "kUrkl",
+    "curricle": "kUrIkl",
     "acquainting": "`kw!antN",
-    "newlyborn": "nulbrn",
+    "newlyborn": "nulibrn",
     "discomposure": "dskmpoZr",
-    "overscrupulous": "`vrskrpyls",
-    "goodhumoured": "gdhmrd",
+    "overscrupulous": "`ovrskrpyls",
+    "goodhumoured": "gUdhymrd",
     "threeandtwenty": "Tri` & twnt`",
     "resentfully": "rsntfl`",
     "fretfully": "frEtfl`",
@@ -22,6 +22,7 @@ extras = {
     "raptures": "rptSrs",
     "conjecturing": "kndZktSyrN",
     "bennet's": "bEnIts",
+    "bennets": "bEnIts",
     "barefaced": "bErfsd",
     "favourable": "f!evErObOl",
     "bingley's": "bINgliz",
@@ -45,7 +46,14 @@ extras = {
     "easiness": "`izins",
     "darcy's": "darsiz",
     "meryton": "merItn",
+    "st": "s!ent",
+    "lucases": "lukOsz",
+    "overhearings": "`ovrhrNz",
+    "lizzy's": "lIziz",
+    "foxhounds": "fkshndz",
 }
+
+abbrevs = ["Mr.", "Mrs.", "St."]
 
 def xlat1(c):
     if c.startswith("AA"): return "a"
