@@ -34,7 +34,12 @@ const float COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
 cairo_t * cr;
 cairo_surface_t * csurf;
 
-float unit = 1.0/5.0;
+float SCALE = 1.0;
+
+float LINE_WIDTH = SCALE*0.01;
+
+float unit = SCALE/5.0;
+
 
 float step = unit/4;
 float halfstep = step/2;
@@ -86,9 +91,10 @@ void new_page() {
     cur_col = 0;
 }
 
+//TODO change to render row separator in case rows != 2
 void render_midline() {
     cairo_save(cr);
-    cairo_set_line_width(cr, 0.005);
+    cairo_set_line_width(cr, LINE_WIDTH/2);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
     cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
@@ -981,7 +987,7 @@ int main(int nargs, char * args[])
 
     //draw_skull_bat(0.5, MARGIN/3, MARGIN);
 
-    cairo_set_line_width(cr, 0.01);
+    cairo_set_line_width(cr, LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
