@@ -50,7 +50,7 @@ int cur_row = 0;
 float elstep = step * sqrt(2)/2;
 
 float hookrad = 2*halfstep/3;
-float dotrad = halfstep/5;
+float dotrad = 2*halfstep/5;
 float voicedlen = 2*step/3;
 
 float leftx;
@@ -361,68 +361,84 @@ void render_monopthong(char c, float vowelx) {
         y += halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
         break;
     case 'I':   // sit
         x += halfstep * sqrt(3)/2 /2;
         y += halfstep/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep * sqrt(3)/2, -halfstep/2);
+        cairo_stroke(cr);
         break;
     case 'e':   // sate
         x += halfstep /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep, 0);
+        cairo_stroke(cr);
         break;
     case 'E':   // set
         x += halfstep * sqrt(3)/2 /2;
         y -= halfstep/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep * sqrt(3)/2, +halfstep/2);
+        cairo_stroke(cr);
         break;
     case 'A':   // sat
         x += halfstep/2 /2;
         y -= halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep/2, halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
         break;
     case 'a':   // sot
         y -= halfstep /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, 0, halfstep);
+        cairo_stroke(cr);
         break;
     case 'O':   // sup
         x -= halfstep/2 /2;
         y -= halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep/2, halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
         break;
     case 'o':   // so
         x -= halfstep /2;
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep, 0);
+        cairo_stroke(cr);
 
         cairo_save(cr);
-        cairo_new_sub_path(cr);
-        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
-        cairo_stroke(cr);
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 0,0,0);
+        cairo_stroke(cr);
         cairo_restore(cr);
 
         break;
@@ -431,15 +447,17 @@ void render_monopthong(char c, float vowelx) {
         y += halfstep/2 /2;
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep * sqrt(3)/2, -halfstep/2);
+        cairo_stroke(cr);
 
         cairo_save(cr);
-        cairo_new_sub_path(cr);
-        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
-        cairo_stroke(cr);
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 0,0,0);
+        cairo_stroke(cr);
         cairo_restore(cr);
 
         break;
@@ -448,15 +466,17 @@ void render_monopthong(char c, float vowelx) {
         y += halfstep * sqrt(3)/2 /2;
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep/2, -halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
 
         cairo_save(cr);
-        cairo_new_sub_path(cr);
-        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
-        cairo_stroke(cr);
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 0,0,0);
+        cairo_stroke(cr);
         cairo_restore(cr);
 
         break;
@@ -476,27 +496,33 @@ void render_i_dipthong(char c, float vowelx) {
         y += halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, -halfstep, 0);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
         break;
     case 'a':   // !a ai site
         x += halfstep * sqrt(3)/2 /2;
         y -= halfstep /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, 0, halfstep);
         cairo_rel_line_to(cr, -halfstep * sqrt(3)/2, -halfstep/2);
+        cairo_stroke(cr);
         break;
     case 'o':   // !o oi soy
         x -= halfstep /2;
         y += halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep, 0);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
         break;
     default:
         cout << "unknown i dipthong: " << c << endl;
@@ -515,9 +541,11 @@ void render_u_dipthong(char c, float vowelx) {
         y -= halfstep /2;
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, 0, halfstep);
         cairo_rel_line_to(cr, halfstep * sqrt(3)/2, -halfstep/2);
+        cairo_stroke(cr);
         break;
     case 'o':   // ^o ou low
         x -= halfstep /2 + halfstep/2 /2;
@@ -525,15 +553,17 @@ void render_u_dipthong(char c, float vowelx) {
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep, 0);
         cairo_rel_line_to(cr, halfstep/2, -halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
 
         cairo_save(cr);
-        cairo_new_sub_path(cr);
-        cairo_arc(cr, x, y, dotrad*2, 0, 2*M_PI);
-        cairo_stroke(cr);
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_set_source_rgb(cr, 1,1,1);
         cairo_fill(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 0,0,0);
+        cairo_stroke(cr);
         cairo_restore(cr);
 
         break;
@@ -724,6 +754,19 @@ void render_numeral(string w) {
     cairo_stroke(cr);
 }
 
+void render_vowel(string vs, float vowelx) {
+    cairo_path_t * saved_path = cairo_copy_path(cr);
+    cairo_new_path(cr);
+
+    if (vs[0] == '!') render_i_dipthong(vs[1], vowelx);
+    else if (vs[0] == '^') render_u_dipthong(vs[1], vowelx);
+    else render_monopthong(vs[0], vowelx);
+
+    cairo_new_path(cr);
+    cairo_append_path(cr, saved_path);
+    cairo_path_destroy(saved_path);
+}
+
 void render_phonetic_word(string w) {
     riby = starty;
 
@@ -764,7 +807,7 @@ void render_phonetic_word(string w) {
             if (fills.l_bot && fills2.l_top
              || fills.c_bot && fills2.c_top
              || fills.r_bot && fills2.r_top
-             ) { // || ix+1<w.length() && vowel(w[ix+1])) {
+             ) {
                 // gap
                 riby += ribstep;
             }
@@ -800,7 +843,7 @@ void render_phonetic_word(string w) {
                 else nexty = riby + vowel_space(w[nextrib_ix]).before;
 
                 float vowel_room = nexty - prevy;
-                float vowel_needs = halfstep + dotrad*2;
+                float vowel_needs = halfstep + dotrad;
                 if (vowel_room < vowel_needs) {
                     float skootch = vowel_needs - vowel_room;
                     riby += skootch;
@@ -811,9 +854,7 @@ void render_phonetic_word(string w) {
             }
 
             float vowelx = markx;
-            if (w[ix+1] == '!') render_i_dipthong(w[ix+2], vowelx);
-            else if (w[ix+1] == '^') render_u_dipthong(w[ix+2], vowelx);
-            else render_monopthong(w[ix+1], vowelx);
+            render_vowel(w.substr(ix+1), vowelx);
         }
 
         ix = nextrib_ix;
