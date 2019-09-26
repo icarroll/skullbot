@@ -850,6 +850,8 @@ string phoneticize_word(string raw_w) {
 
     string w;
     for (char c : raw_w) if (isalpha(c) || c == '\'') w.push_back(tolower(c));
+    if (w[0] == '\'') w = w.substr(1);
+    if (w.back() == '\'') w.pop_back();
 
     if (w.length() == 0) return "";
 
@@ -943,7 +945,17 @@ int main(int nargs, char * args[])
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
-    vector<string> paras = load_text("chapter04.txt");
+    vector<string> lines = load_text("chapter05.txt");
+    vector<string> paras;
+    string para;
+    for (string line : lines) {
+        if (line.size()) para += line + " ";
+        else {
+            paras.push_back(para);
+            para.clear();
+        }
+    }
+    paras.push_back(para);
     for (string para : paras) {
         if (para.substr(0,7) == "Chapter") new_page();
         render_columns(para);
