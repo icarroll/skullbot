@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -81,14 +82,20 @@ void new_column() {
     col_bot = starty + COLUMN_HEIGHT;
 }
 
-bool first_page = true;
+int page_number = 0;
 
+void render_columns(string text);
 void new_page() {
-    if (! first_page) cairo_surface_show_page(csurf);
-    first_page = false;
-
+    page_number += 1;
     cur_row = 0;
     cur_col = 0;
+
+    if (page_number > 1) {
+        cairo_surface_show_page(csurf);
+        cur_col = -2;
+        render_columns("page " + to_string(page_number));
+        cur_col = 0;
+    }
 }
 
 //TODO change to render row separator in case rows != 2
@@ -215,7 +222,7 @@ void render_consonant(char c) {
         break;
     default:
         // unimplemented letter
-        cout << "unimplemented: " << c << endl;
+        cout << "unimplemented consonant: " << c << endl;
         riby += halfstep;
         cairo_new_sub_path(cr);
         cairo_arc(cr, spinex,riby, halfstep, 0,2*M_PI);
@@ -292,7 +299,7 @@ fills_t consonant_fills(char c) {
         break;
     default:
         // unimplemented letter
-        cout << "unimplemented: " << c << endl;
+        cout << "unimplemented consonant fill: " << c << endl;
         return {false, true, false, false, true, false};
         break;
     }
@@ -345,7 +352,7 @@ vowel_space_t vowel_space(char c) {
         return {0,halfstep};
         break;
     default:
-        cout << "unimplemented: " << c << endl;
+        cout << "unimplemented vowel space: " << c << endl;
         return {0,0};
         break;
     }
@@ -773,6 +780,66 @@ void render_vowel(string vs, float vowelx) {
     cairo_path_destroy(saved_path);
 }
 
+void render_punct(string w) {
+    cairo_path_t * saved_path = cairo_copy_path(cr);
+    cairo_new_path(cr);
+
+    if (w == "-") {
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex, riby, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
+    }
+    else if (w == "--" || w == ";" || w == ":") {
+        cairo_move_to(cr, spinex-step-halfstep, riby);
+        cairo_line_to(cr, spinex-halfstep-halfstep, riby+halfstep);
+        cairo_line_to(cr, spinex-step-halfstep, riby+step);
+        cairo_move_to(cr, spinex-halfstep-halfstep, riby+halfstep);
+        cairo_line_to(cr, spinex-halfstep, riby+halfstep);
+        cairo_stroke(cr);
+        riby += step;
+    }
+    else if (w == ",") {
+        cairo_move_to(cr, spinex-step-halfstep, riby-halfstep);
+        cairo_line_to(cr, spinex-halfstep-halfstep, riby);
+        cairo_line_to(cr, spinex-step-halfstep, riby+halfstep);
+        cairo_stroke(cr);
+    }
+    else if (w == ".") {
+        cairo_move_to(cr, spinex-step-halfstep, riby);
+        cairo_line_to(cr, spinex, riby);
+        cairo_stroke(cr);
+    }
+    else if (w == "\"") {
+        cairo_move_to(cr, spinex-step-halfstep, riby);
+        cairo_line_to(cr, spinex-step, riby);
+        riby += ribstep;
+        cairo_move_to(cr, spinex-step-halfstep, riby);
+        cairo_line_to(cr, spinex-step, riby);
+        cairo_stroke(cr);
+    }
+    else cout << "unknown punct: " << w << endl;
+
+    cairo_new_path(cr);
+    cairo_append_path(cr, saved_path);
+    cairo_path_destroy(saved_path);
+}
+
+bool isprosody(char c) {
+    switch (c) {
+    case '-':
+    case ',':
+    case '.':
+    case '"':
+    case ';':
+    case ':':
+        return true;
+        break;
+    default:
+        return false;
+        break;
+    }
+}
+
 void render_phonetic_word(string w) {
     riby = starty;
 
@@ -788,6 +855,11 @@ void render_phonetic_word(string w) {
 
     if (isdigit(w[0])) {
         render_numeral(w);
+        return;
+    }
+
+    if (isprosody(w[0])) {
+        render_punct(w);
         return;
     }
 
@@ -820,6 +892,7 @@ void render_phonetic_word(string w) {
             else {
                 // no gap
                 //XXX experiment with small gap due to eg "disquiet"
+                riby += ribstep/3;
             }
         }
         else {
@@ -883,7 +956,13 @@ void render_phonetic_words(vector<string> & ws) {
         starty = riby + wordstep;
         //TODO move this into render_column
         if (starty > col_bot) {
-            ws.assign(++it, ws.end());
+            it += 1;
+            if (isprosody((* it)[0])) {
+                render_phonetic_word(* it);
+                starty = riby + wordstep;
+                it += 1;
+            }
+            ws.assign(it, ws.end());
             return;
         }
     }
@@ -894,6 +973,7 @@ map<string, string> pronunciation;
 
 string phoneticize_word(string raw_w) {
     if (isdigit(raw_w[0])) return raw_w;
+    if (isprosody(raw_w[0])) return raw_w;
 
     string w;
     for (char c : raw_w) if (isalpha(c) || c == '\'') w.push_back(tolower(c));
@@ -917,17 +997,45 @@ vector<string> phoneticize_words(vector<string> ws) {
     return ps;
 }
 
+set<string> abbrevs = {"Mrs.", "Mr.", "St."};
+
 vector<string> split_words(string text) {
     istringstream iss(text);
     vector<string> ws;
     string w;
     while (iss >> w) {
+        if (w[0] == '"') {
+            ws.push_back("\"");
+            w = w.substr(1);
+        }
+
         int ix;
         while ((ix=w.find("-")) != -1) {
             ws.push_back(w.substr(0,ix));
-            w = w.substr(ix+1);
+            if (w.substr(ix+1).find("-") == 0) {
+                // em-dash
+                ws.push_back("--");
+                w = w.substr(ix+2);
+            }
+            else {
+                // hyphen
+                ws.push_back("-");
+                w = w.substr(ix+1);
+            }
         }
         ws.push_back(w);
+
+        if ((ix=w.find(".")) != -1) {
+            if (abbrevs.count(w.substr(0, ix+1)) == 0) {
+                ws.push_back(".");
+            }
+        }
+
+        if ((ix=w.find(",")) != -1) ws.push_back(",");
+        if ((ix=w.find(";")) != -1) ws.push_back(";");
+        if ((ix=w.find(":")) != -1) ws.push_back(":");
+
+        if (w.back() == '"') ws.push_back("\"");
     }
     return ws;
 }
@@ -992,7 +1100,7 @@ int main(int nargs, char * args[])
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
-    vector<string> lines = load_text("chapter05.txt");
+    vector<string> lines = load_text("chapter07.txt");
     vector<string> paras;
     string para;
     for (string line : lines) {
@@ -1004,7 +1112,7 @@ int main(int nargs, char * args[])
     }
     paras.push_back(para);
     for (string para : paras) {
-        if (para.substr(0,7) == "Chapter") new_page();
+        if (para.substr(0,7) == "Chapter") {new_page(); cur_col-=1;}
         render_columns(para);
     }
 

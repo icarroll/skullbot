@@ -4,6 +4,7 @@ commons = dict(lw(*line.split()) for line in open("common_5000.txt").readlines()
                if " " in line)
 
 extras = {
+    "skullbat": "sklbt",
     "netherfield": "nETrfild",
     "michaelmas": "mIklms",
     "pemberley": "pEmbrl`",
@@ -35,6 +36,7 @@ extras = {
     "unreserved": "`nrzrvd",
     "longbourn": "laNborn",
     "hurst's": "hUrsts",
+    "hursts": "hUrsts",
     "fancying": "fAnsyN",
     "setdowns": "sEtdns",
     "humoured": "hyumErd",
@@ -51,6 +53,30 @@ extras = {
     "overhearings": "`ovrhrNz",
     "lizzy's": "lIziz",
     "foxhounds": "fkshndz",
+    "superciliousness": "suprslysns",
+    "simpleton": "smpltn",
+    "tolerably": "tlrbl`",
+    "vingt": "viNt",
+    "twelvemonth": "twlvmnT",
+    "vexation": "vksSn",
+    "criticise": "krtsz",
+    "mortifying": "mrtfyN",
+    "inconsiderable": "`nknsdrbl",
+    "entreat": "`ntrit",
+    "complaisance": "kmplesns",
+    "insipidity": "`InsIpIdIti`",
+    "agreeably": "`grybli`",
+    "intrepidity": "`IntrEpIdIti`",
+    "thither": "TDr",
+    "milliner's": "mIlInrz",
+    "regimentals": "rdZmntlz",
+    "effusions": "`fyZnz",
+    "slightingly": "sl!atNl`",
+    "prognostics": "pragnstks",
+    "horsewoman": "hrswmn",
+    "brilliancy": "brlyns`",
+    "occasion's": "`keZynz",
+    "favourably": "fevrbl`",
 }
 
 abbrevs = ["Mr.", "Mrs.", "St."]
