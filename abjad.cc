@@ -809,6 +809,18 @@ void render_punct(string w) {
         cairo_line_to(cr, spinex, riby);
         cairo_stroke(cr);
     }
+    else if (w == "!") {
+        cairo_move_to(cr, spinex-step-halfstep/2, riby-step);
+        cairo_rel_curve_to(cr, -step,halfstep, halfstep,halfstep, -halfstep,step);
+        cairo_line_to(cr, spinex, riby);
+        cairo_stroke(cr);
+    }
+    else if (w == "?") {
+        cairo_move_to(cr, spinex-step-halfstep, riby-halfstep);
+        cairo_rel_curve_to(cr, 0,-halfstep, step,-halfstep, 0,halfstep);
+        cairo_line_to(cr, spinex, riby);
+        cairo_stroke(cr);
+    }
     else if (w == "\"") {
         cairo_move_to(cr, spinex-step-halfstep, riby);
         cairo_line_to(cr, spinex-step, riby);
@@ -829,6 +841,8 @@ bool isprosody(char c) {
     case '-':
     case ',':
     case '.':
+    case '!':
+    case '?':
     case '"':
     case ';':
     case ':':
@@ -848,6 +862,12 @@ void render_phonetic_word(string w) {
         return;
     }
 
+    // this must come before vowel() because '!' is a "vowel"
+    if (isprosody(w[0])) {
+        render_punct(w);
+        return;
+    }
+
     if (vowel(w[0])) {
         render_vowel_word(w);
         return;
@@ -855,11 +875,6 @@ void render_phonetic_word(string w) {
 
     if (isdigit(w[0])) {
         render_numeral(w);
-        return;
-    }
-
-    if (isprosody(w[0])) {
-        render_punct(w);
         return;
     }
 
@@ -957,11 +972,19 @@ void render_phonetic_words(vector<string> & ws) {
         //TODO move this into render_column
         if (starty > col_bot) {
             it += 1;
+            while (isprosody((* it)[0])) {
+                render_phonetic_word(* it);
+                starty = riby + wordstep;
+                it += 1;
+            }
+            /*
+            it += 1;
             if (isprosody((* it)[0])) {
                 render_phonetic_word(* it);
                 starty = riby + wordstep;
                 it += 1;
             }
+            */
             ws.assign(it, ws.end());
             return;
         }
@@ -1034,6 +1057,8 @@ vector<string> split_words(string text) {
         if ((ix=w.find(",")) != -1) ws.push_back(",");
         if ((ix=w.find(";")) != -1) ws.push_back(";");
         if ((ix=w.find(":")) != -1) ws.push_back(":");
+        if ((ix=w.find("!")) != -1) ws.push_back("!");
+        if ((ix=w.find("?")) != -1) ws.push_back("?");
 
         if (w.back() == '"') ws.push_back("\"");
     }
@@ -1084,6 +1109,8 @@ vector<string> load_text(string filename) {
 
 int main(int nargs, char * args[])
 {
+    if (nargs != 2) die("filename");
+
     load_phonetic();
 
     csurf = cairo_pdf_surface_create(
@@ -1100,7 +1127,7 @@ int main(int nargs, char * args[])
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
 
-    vector<string> lines = load_text("chapter07.txt");
+    vector<string> lines = load_text(args[1]);
     vector<string> paras;
     string para;
     for (string line : lines) {
