@@ -14,6 +14,7 @@ have hf
 had hd
 it `It
 I I
+aye I
 that Tt
 for fr
 you y
@@ -22,10 +23,10 @@ with wT
 on `an
 do d
 does ds
-doing dN
+doing dwN
 done dn
 did dd
-say s`
+say se`
 says sz
 said sd
 this Ts
@@ -43,7 +44,7 @@ as `Az
 what wt
 go g
 goes gs
-going gN
+going gwN
 gone gn
 went wEnt
 their Tr
@@ -66,7 +67,7 @@ made md
 about `bt
 know n
 knows ns
-knowing nN
+knowing nwN
 knew nu`
 will wIl
 up `p
@@ -74,10 +75,10 @@ one wn
 time tm
 there Tr
 year yir
-so s
-think Tink
-thinks Tinks
-thinking TinkN
+so so`
+think TiNk
+thinks TiNks
+thinking TiNkN
 thought Tat
 when wEn
 which wtS
@@ -104,6 +105,9 @@ could kd
 now n`
 than TAn
 like l!ak
+likes l!aks
+liking l!akN
+liked l!akt
 other `Tr
 how h^a`
 then TEn
@@ -117,17 +121,17 @@ wants wants
 wanting wntN
 wanted wntt
 way we`
-look lk
-looks lks
+look lUk
+looks lUks
 looking lkN
 looked lkt
 first frst
-also `ls
+also `ls`
 new nu`
-because bks
+because bikOz
 day d`
-use yz
-uses yzz
+use ys
+uses yss
 using ysN
 used yst
 no n
@@ -159,7 +163,8 @@ backing bkN
 backed bkt
 any `n`
 good gd
-woman wmn
+woman wUmn
+women wImn
 through Tru`
 us `s
 life lf
@@ -185,10 +190,10 @@ school skl
 still stl
 try tr`
 tries trs
-trying trN
+trying tryN
 tried tr!ad
 in `In
-last lst
+last lAst
 ask `sk
 asks `sks
 asking `skN
@@ -217,7 +222,7 @@ high h!a`
 really rl`
 something smTN
 most most
-another `nTr
+another `nOTr
 much mtS
 family fml`
 own `on
@@ -269,6 +274,9 @@ talk tak
 where wEr
 we're wir
 turn trn
+turns trns
+turning trnN
+turned trnt
 problem prblm
 every `fr`
 start strt
@@ -277,12 +285,18 @@ might m!at
 American `mrkn
 show S`
 part prt
+parts prts
+parting prtN
+parted prtt
 against `knst
 place pls
 such stS
 again `kn
-few fy
+few fy`
 case ks
+cases kss
+casing ksN
+cased kst
 week wk
 company kmpn`
 system sstm
@@ -290,50 +304,68 @@ each `tS
 right rt
 program prkrm
 hear hir
-question kwstn
+question kwstSn
 during drN
 play pl`
 government gvrnmnt
-run rn
+run rOn
+runs rns
+running rnN
+ran rAn
 small sml
 number nmbr
 off `af
 always `lws
 move mf
 night n!at
-live lIv
+live lv
+lives lvs
+living lvN
+lived lvt
 Mr mstr
 point p!ont
 believe blf
-hold hld
+believes blfs
+believing blfN
+believed blft
+hold hlt
 today td`
 bring brN
 brings brNs
 bringing brNN
 brought brt
 happen hpn
+happens hpns
+happening hpnN
+happened hpnt
 next nkst
 without wTt
 before bfr
 large lrdZ
 million mlyn
 must mst
-home hm
+home hom
 under `ntr
 water wtr
 room rm
-write r!at
+write rt
+writes rts
+writing rtN
+wrote rot
 mother mTr
-area `r`
+area `ry`
 national nSnl
 money mn`
 story str`
 young yN
-fact fkt
+fact fAkt
 month mnT
 different dfrnt
 lot lat
 study std`
+studies stds
+studying stdyN
+studied stdd
 book bUk
 eye I
 job tSb
@@ -341,6 +373,9 @@ word wrd
 though T^o`
 business bsns
 issue iSy
+issues iSys
+issuing iSyN
+issued iSyt
 side s!ad
 kind knd
 four fr
@@ -351,10 +386,16 @@ long lN
 both bT
 little ltl
 house h^as
-yes ys
-since sns
-provide prvd
+yes yEs
+since sIns
+provide prv!ad
+provides prv!ads
+providing prv!adN
+provided prv!add
 service srvs
+services srvss
+servicing srvsN
+serviced srvst
 around `rnd
 friend frnd
 important `mprtnt
@@ -368,67 +409,123 @@ game gm
 often `ftn
 yet yt
 line ln
+lines lns
+lining lnN
+lined lnt
 political pltkl
 end `nd
 among `mN
-ever `vr
+ever `Evr
 stand stnd
+stands stnds
+standing stndN
+stood std
 bad bd
 lose lz
 however hwfr
 member mmpr
 pay p`
 law la`
-meet mt
+meet mit
+meets mits
+meeting mitN
+met mEt
 car kr
-city st`
+city sIt`
 almost `lmst
 include `nklt
+includes `nklts
+including `nkltN
+included `nkltt
 continue kntny
+continues kntnys
+continuing kntnywN
+continued kntnyt
 set sEt
+sets sEts
+setting sEtN
 later ltr
 community kmynt`
 name nm
+names nms
+naming nmN
+named nmt
 five fv
 once wns
 white w!at
 least list
 president prstnt
 learn lrn
+learns lrns
+learning lrnN
+learned lrnt
 real rl
 change tSndZ
+changes tSndZs
+changing tSndZN
+changed tSndZt
 team tim
 minute mnt
 best bst
 several sfrl
-idea `d`
+idea `dy`
 kid kd
 body bd`
 information `nfrmSn
 nothing nTN
 ago `g`
 lead ld
+leads lds
+leading ldN
+led ld
 social sSl
 understand `ntrstnt
+understands `ntrstnts
+understanding `ntrstntN
+understood `ntrstd
 whether wTr
 watch wtS
+watches wtSs
+watching wtSN
+watched wtSt
 together tkTr
 follow fal`
+follows falos
+following falwN
+followed falot
 parent prnt
 stop stap
+stops staps
+stopping stapN
+stopped stapt
 face fs
+faces fss
+facing fsN
+faced fst
 anything `nTN
-create krt
+create kryt
+creates kryts
+creating krytN
+created krytt
 public pblk
 already `lrd`
 speak spk
+speaks spks
+speaking spkN
+spoke spok
+spoken spkn
 others `Trs
 read rd
+reads rds
+reading rdN
 level lfl
 allow `l`
 add `d
 office `fs
 spend spnd
+spends spnds
+spending spndN
+spent spnt
 door dr
 health hlT
 person prsn
@@ -439,14 +536,33 @@ history hstr`
 party part`
 within wTn
 grow gr`
+grows grz
+growing grwN
+grew gru`
+grown grn
 result rslt
 open `pn
+opens `pns
+opening `pnN
+opened `pnt
 morning mrnN
 walk wak
+walks waks
+walking wakN
+walked wakt
 reason rsn
+reasons rsns
+reasoning rsnN
+reasoned rsnt
 low lo`
 win wIn
+wins wIns
+winning wInN
+won wn
 research rsrtS
+researches rsrtSs
+researching rsrtSN
+researched rsrtSt
 girl grl
 guy g`
 early `rl`
@@ -457,12 +573,21 @@ are `ar
 air `Er
 teacher ttSr
 force frs
+forces frss
+forcing frsN
+forced forst
 offer `fr
+offers `frs
+offering `frN
+offered `afrt
 enough `nf
 education `dykSn
 across `krs
 although `lT`
 remember rmmbr
+remembers rmmbrs
+remembering rmmbrN
+remembered rmmbrt
 foot ft
 second sknd
 boy b!o`
@@ -473,22 +598,58 @@ age `dZ
 policy pls`
 everything `frTN
 love lOv
+loves lOvs
+loving lOvN
+loved lovd
 process prss
-music mzk
-including `nkltN
+processes prssz
+processing prssN
+processed prsst
+music myzk
 consider knstr
+considers knstrs
+considering knstrN
+considered knstrt
 appear `pr
+appears `prs
+appearing `prN
+appeared `prt
 actually `ktSl`
 buy b`
+buys b!as
+buying byN
+bought bat
 probably prbbl`
 human hmn
 wait w!et
+waits w!ets
+waiting w!etN
+waited w!ett
 serve srv
+serves srvs
+serving srvN
+served srvt
 market mrkt
+markets mrkts
+marketing mrktN
+marketed mrktt
 die d!a`
+dies d!az
+dying dyN
+died d!ad
+dead dEd
 send sEnd
+sends sEndz
+sending sEndN
+sent sEnt
 expect `kspkt
-sense
+expects `kspkts
+expecting `kspktN
+expected `kspktt
+sense sEns
+senses sEnss
+sensing sEnsN
+sensed sEnst
 build
 stay
 fall
@@ -788,7 +949,6 @@ hot
 language
 usually
 response
-dead
 rise
 animal
 factor
@@ -920,7 +1080,6 @@ rather
 laugh
 guess
 executive
-study
 prove
 hang
 entire
@@ -1340,7 +1499,6 @@ observe
 flight
 inside
 facility
-understanding
 average
 emerge
 advantage
@@ -1438,7 +1596,7 @@ commit
 female
 youth
 wave
-afraid
+afraid `fred
 quarter
 background
 native
@@ -4617,7 +4775,6 @@ commodity
 cure
 mineral
 hunger
-dying
 developmental
 faster
 spare

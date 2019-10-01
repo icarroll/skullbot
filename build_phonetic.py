@@ -77,9 +77,15 @@ extras = {
     "brilliancy": "brlyns`",
     "occasion's": "`keZynz",
     "favourably": "fevrbl`",
+    "ragout": "rAgu`",
+    "impertinence": "`Imprtnns",
+    "blowsy": "bl^azi`",
+    "cheapside": "tSips!ad",
+    "pianoforte": "pynofrt`",
+    "captivation": "kptvSn",
+    "solaced": "solOsd",
+    "wretchedness": "rEtSEdns",
 }
-
-abbrevs = ["Mr.", "Mrs.", "St."]
 
 def xlat1(c):
     if c.startswith("AA"): return "a"
