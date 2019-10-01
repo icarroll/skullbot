@@ -427,15 +427,37 @@ void render_monopthong(char c, float vowelx) {
         cairo_rel_line_to(cr, 0, halfstep);
         cairo_stroke(cr);
         break;
-    case 'O':   // sup
+    case 'O':   // caught, if you don't merge with cot
         x -= halfstep/2 /2;
         y -= halfstep * sqrt(3)/2 /2;
+        /*
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
         cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep/2, halfstep * sqrt(3)/2);
         cairo_stroke(cr);
+        */
+        cairo_move_to(cr, x, y);
+        cairo_rel_line_to(cr, halfstep/2, halfstep * sqrt(3)/2);
+        cairo_stroke(cr);
+
+        cairo_save(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 1,1,1);
+        cairo_fill(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 0,0,0);
+        cairo_stroke(cr);
+        cairo_restore(cr);
+
+        break;
+    case '@':   // sup (schwa-ish)
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
         break;
     case 'o':   // so
         x -= halfstep /2;
@@ -600,6 +622,7 @@ bool vowel(char c) {
     case 'U':
     case '!':
     case '^':
+    case '@':
         return true;
         break;
     default:
@@ -628,7 +651,7 @@ bool voiced(char c) {
 bool logogram(char c) {
     switch (c) {
     case '&':
-    case '@':
+    case 'X':
         return true;
         break;
     default:
@@ -647,7 +670,7 @@ void render_logogram_word(string w) {
         cairo_rel_line_to(cr, -step, 0);
         riby += step*2;
     }
-    else if (w == "@@@") {
+    else if (w == "XXX") {
         // red mark for unknown word
         cairo_save(cr);
         cairo_set_source_rgb(cr, 1,0,0);
@@ -1008,7 +1031,7 @@ string phoneticize_word(string raw_w) {
     if (pronunciation.count(w)) return pronunciation[w];
 
     cout << "unknown word: " << raw_w << endl;
-    return "@@@"; // red mark for unknown word
+    return "XXX"; // red mark for unknown word
 }
 
 vector<string> phoneticize_words(vector<string> ws) {

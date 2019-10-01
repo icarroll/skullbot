@@ -222,7 +222,7 @@ high h!a`
 really rl`
 something smTN
 most most
-another `nOTr
+another `n@Tr
 much mtS
 family fml`
 own `on
@@ -262,7 +262,7 @@ begin bgIn
 begins bgIns
 beginning bgnN
 began bgAn
-begun bgOn
+begun bg@n
 seem sim
 seems sims
 seeming simN
@@ -308,7 +308,7 @@ question kwstSn
 during drN
 play pl`
 government gvrnmnt
-run rOn
+run r@n
 runs rns
 running rnN
 ran rAn
@@ -597,9 +597,9 @@ able `bl
 age `dZ
 policy pls`
 everything `frTN
-love lOv
-loves lOvs
-loving lOvN
+love l@v
+loves l@vs
+loving l@vN
 loved lovd
 process prss
 processes prssz

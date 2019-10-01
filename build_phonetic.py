@@ -25,14 +25,14 @@ extras = {
     "bennet's": "bEnIts",
     "bennets": "bEnIts",
     "barefaced": "bErfsd",
-    "favourable": "f!evErObOl",
+    "favourable": "f!evEr@b@l",
     "bingley's": "bINgliz",
     "disconcerted": "dsknsrtd",
     "hertfordshire": "hrtfrdSr",
     "goodlooking": "gUdlkN",
     "gentlemanlike": "dZntlmnlk",
-    "brotherinlaw": "brODErInlo`",
-    "handsomer": "hAnsOmr",
+    "brotherinlaw": "br@DErInlo`",
+    "handsomer": "hAns@mr",
     "unreserved": "`nrzrvd",
     "longbourn": "laNborn",
     "hurst's": "hUrsts",
@@ -42,14 +42,14 @@ extras = {
     "humoured": "hyumErd",
     "censuring": "sEnSErN",
     "candour": "kAndEr",
-    "pliancy": "pl!aOnsi`",
-    "unassailed": "`OnOs!eld",
+    "pliancy": "pl!a@nsi`",
+    "unassailed": "`@n@s!eld",
     "meanly": "minli`",
     "easiness": "`izins",
     "darcy's": "darsiz",
     "meryton": "merItn",
     "st": "s!ent",
-    "lucases": "lukOsz",
+    "lucases": "luk@sz",
     "overhearings": "`ovrhrNz",
     "lizzy's": "lIziz",
     "foxhounds": "fkshndz",
@@ -83,18 +83,26 @@ extras = {
     "cheapside": "tSips!ad",
     "pianoforte": "pynofrt`",
     "captivation": "kptvSn",
-    "solaced": "solOsd",
+    "solaced": "sol@sd",
     "wretchedness": "rEtSEdns",
+    "housemaid": "h^asmd",
+    "acknowledgments": "`knldZmnts",
+    "studier": "st@dyr",
+    "unvarying": "`nvryN",
+    "pleasanter": "plsntr",
+    "gardiner's": "gardInrs",
+    "unaffectedly": "`nAfktdl`",
+    "witticisms": "wItIszms",
 }
 
 def xlat1(c):
     if c.startswith("AA"): return "a"
     if c.startswith("AE"): return "A"
-    if c.startswith("AH"): return "O"
-    if c.startswith("AO"): return "o" #??? /a/?
+    if c.startswith("AH"): return "@"
+    if c.startswith("AO"): return "O"
     if c.startswith("AW"): return "^a"
-    if c.startswith("AX"): return "O"   # I can't believe it's not schwa!
-    if c.startswith("AXR"): return "Or"
+    if c.startswith("AX"): return "@"   # I can't believe it's not schwa!
+    if c.startswith("AXR"): return "@r"
     if c.startswith("AY"): return "!a"
     if c.startswith("EH"): return "E"
     if c.startswith("ER"): return "Er"
@@ -142,7 +150,7 @@ def xlat1(c):
 
     raise Exception("unknown code {!r}".format(c))
 
-vowels = "aeiouAEIOU!^"
+vowels = "aeiouAEIOU!^@"
 
 def xlat(arpabet):
     phonets = [xlat1(c) for c in arpabet.split()]
