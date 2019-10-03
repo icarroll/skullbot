@@ -861,6 +861,7 @@ void render_punct(string w) {
 
 bool isprosody(char c) {
     switch (c) {
+    case '/':
     case '-':
     case ',':
     case '.':
@@ -876,6 +877,8 @@ bool isprosody(char c) {
         break;
     }
 }
+
+bool emphasis = false;
 
 void render_phonetic_word(string w) {
     riby = starty;
@@ -982,6 +985,10 @@ void render_phonetic_word(string w) {
 
     cairo_move_to(cr, spinex, starty);
     cairo_line_to(cr, spinex, riby);
+    if (emphasis) {
+        cairo_move_to(cr, spinex-step-halfstep, starty);
+        cairo_line_to(cr, spinex-step-halfstep, riby);
+    }
     cairo_stroke(cr);
 
     if (w[lastrib_ix] == '`') riby += halfstep;
@@ -990,24 +997,22 @@ void render_phonetic_word(string w) {
 void render_phonetic_words(vector<string> & ws) {
     for (auto it=ws.begin() ; it!=ws.end() ; ++it) {
         auto w = * it;
+        if (w == "/") {
+            emphasis = ! emphasis;
+            continue;
+        }
+
         render_phonetic_word(w);
         starty = riby + wordstep;
         //TODO move this into render_column
         if (starty > col_bot) {
             it += 1;
-            while (isprosody((* it)[0])) {
+            while ((it != ws.end()) && isprosody((* it)[0])) {
+                if (* it == "/") break;
                 render_phonetic_word(* it);
                 starty = riby + wordstep;
                 it += 1;
             }
-            /*
-            it += 1;
-            if (isprosody((* it)[0])) {
-                render_phonetic_word(* it);
-                starty = riby + wordstep;
-                it += 1;
-            }
-            */
             ws.assign(it, ws.end());
             return;
         }
@@ -1022,11 +1027,7 @@ string phoneticize_word(string raw_w) {
     if (isprosody(raw_w[0])) return raw_w;
 
     string w;
-    for (char c : raw_w) if (isalpha(c) || c == '\'') w.push_back(tolower(c));
-    if (w[0] == '\'') w = w.substr(1);
-    if (w.back() == '\'') w.pop_back();
-
-    if (w.length() == 0) return "";
+    for (char c : raw_w) w.push_back(tolower(c));
 
     if (pronunciation.count(w)) return pronunciation[w];
 
@@ -1046,45 +1047,75 @@ vector<string> phoneticize_words(vector<string> ws) {
 set<string> abbrevs = {"Mrs.", "Mr.", "St."};
 
 vector<string> split_words(string text) {
-    istringstream iss(text);
     vector<string> ws;
     string w;
-    while (iss >> w) {
-        if (w[0] == '"') {
-            ws.push_back("\"");
-            w = w.substr(1);
-        }
 
-        int ix;
-        while ((ix=w.find("-")) != -1) {
-            ws.push_back(w.substr(0,ix));
-            if (w.substr(ix+1).find("-") == 0) {
-                // em-dash
-                ws.push_back("--");
-                w = w.substr(ix+2);
+    for (char c : text) {
+        if (isspace(c)) {
+            if (! w.empty()) {
+                ws.push_back(w);
+                w.clear();
+            }
+        }
+        else if (isdigit(c)) {
+            if (w.empty() || isdigit(w.back())) w.push_back(c);
+            else {
+                ws.push_back(w);
+                w.clear();
+                w.push_back(c);
+            }
+        }
+        else if (isalpha(c) || c == '\'') {
+            if (w.empty() || isalpha(w.back()) || w.back() == '\'') {
+                w.push_back(c);
             }
             else {
-                // hyphen
-                ws.push_back("-");
-                w = w.substr(ix+1);
+                ws.push_back(w);
+                w.clear();
+                w.push_back(c);
             }
         }
-        ws.push_back(w);
-
-        if ((ix=w.find(".")) != -1) {
-            if (abbrevs.count(w.substr(0, ix+1)) == 0) {
-                ws.push_back(".");
+        else if (c == '-') {
+            if (w.empty() || w.back() == '-') w.push_back(c);
+            else {
+                ws.push_back(w);
+                w.clear();
+                w.push_back(c);
             }
         }
-
-        if ((ix=w.find(",")) != -1) ws.push_back(",");
-        if ((ix=w.find(";")) != -1) ws.push_back(";");
-        if ((ix=w.find(":")) != -1) ws.push_back(":");
-        if ((ix=w.find("!")) != -1) ws.push_back("!");
-        if ((ix=w.find("?")) != -1) ws.push_back("?");
-
-        if (w.back() == '"') ws.push_back("\"");
+        else if (c == '.') {
+            if (w.empty()) w.push_back(c);
+            else if (abbrevs.count(w) == 0) {
+                ws.push_back(w);
+                w.clear();
+            }
+        }
+        else switch (c) {
+        case '"':
+        case ',':
+        case ';':
+        case ':':
+        case '!':
+        case '?':
+            if (! w.empty()) {
+                ws.push_back(w);
+                w.clear();
+            }
+            ws.push_back(string(1, c));
+            break;
+        case '_':
+            if (! w.empty()) {
+                ws.push_back(w);
+                w.clear();
+            }
+            ws.push_back(string(1, '/'));
+            break;
+        default:
+            cout << "can't handle character: " << c << endl;
+            break;
+        }
     }
+
     return ws;
 }
 
