@@ -1345,7 +1345,7 @@ income
 directly
 hurt
 species
-immediately `mdtl
+immediately `midytl`
 track
 basic
 strike
