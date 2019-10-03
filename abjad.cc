@@ -1044,7 +1044,7 @@ vector<string> phoneticize_words(vector<string> ws) {
     return ps;
 }
 
-set<string> abbrevs = {"Mrs.", "Mr.", "St."};
+set<string> abbrevs = {"Mrs", "Mr", "St"};
 
 vector<string> split_words(string text) {
     vector<string> ws;
@@ -1084,10 +1084,11 @@ vector<string> split_words(string text) {
             }
         }
         else if (c == '.') {
-            if (w.empty()) w.push_back(c);
+            if (w.empty()) ws.push_back(string(1, c));
             else if (abbrevs.count(w) == 0) {
                 ws.push_back(w);
                 w.clear();
+                ws.push_back(string(1, c));
             }
         }
         else switch (c) {
@@ -1115,6 +1116,7 @@ vector<string> split_words(string text) {
             break;
         }
     }
+    if (! w.empty()) ws.push_back(w);
 
     return ws;
 }
