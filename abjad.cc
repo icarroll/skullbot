@@ -330,8 +330,10 @@ vowel_space_t vowel_space(char c) {
     case 'T':
     case 'Z':
     case 'S':
-    case 'h':
         return {0,0};
+        break;
+    case 'h':
+        return {0,halfstep/2};
         break;
     case 'w':
         return {0,0};
@@ -963,7 +965,7 @@ void render_phonetic_word(string w) {
                 else nexty = riby + vowel_space(w[nextrib_ix]).before;
 
                 float vowel_room = nexty - prevy;
-                float vowel_needs = halfstep + dotrad;
+                float vowel_needs = halfstep + 2*dotrad;
                 if (vowel_room < vowel_needs) {
                     float skootch = vowel_needs - vowel_room;
                     riby += skootch;
@@ -985,13 +987,15 @@ void render_phonetic_word(string w) {
 
     cairo_move_to(cr, spinex, starty);
     cairo_line_to(cr, spinex, riby);
+
+    if (w[lastrib_ix] == '`') riby += halfstep;
+
     if (emphasis) {
         cairo_move_to(cr, spinex-step-halfstep, starty);
         cairo_line_to(cr, spinex-step-halfstep, riby);
     }
-    cairo_stroke(cr);
 
-    if (w[lastrib_ix] == '`') riby += halfstep;
+    cairo_stroke(cr);
 }
 
 void render_phonetic_words(vector<string> & ws) {
@@ -1025,9 +1029,11 @@ map<string, string> pronunciation;
 string phoneticize_word(string raw_w) {
     if (isdigit(raw_w[0])) return raw_w;
     if (isprosody(raw_w[0])) return raw_w;
+    if (raw_w[0] == '\'') raw_w = raw_w.substr(1);
 
     string w;
     for (char c : raw_w) w.push_back(tolower(c));
+    if (w.empty()) return "";
 
     if (pronunciation.count(w)) return pronunciation[w];
 
