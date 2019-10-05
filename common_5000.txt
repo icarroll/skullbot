@@ -468,7 +468,7 @@ team tim
 minute mnt
 best bst
 several sfrl
-idea `dy`
+idea `diy`
 kid kd
 body bd`
 information `nfrmSn
@@ -720,7 +720,7 @@ according
 decision
 explain
 son
-hope
+hope hop
 develop
 view
 relationship
@@ -925,7 +925,6 @@ agency
 push
 nature
 color
-no
 recently
 store
 reduce
@@ -1123,7 +1122,6 @@ imagine
 tonight
 huge
 ball
-no
 close
 finish
 yourself
@@ -1313,7 +1311,6 @@ participant
 southern
 fresh
 eventually
-no
 forest
 video
 global
@@ -1349,7 +1346,6 @@ immediately `midytl`
 track
 basic
 strike
-hope
 sky
 freedom
 absolutely
@@ -1700,7 +1696,7 @@ tie
 democracy
 eastern
 primary
-yesterday
+yesterday ystrd`
 circle
 device
 progress
@@ -2147,7 +2143,7 @@ tired
 rise
 tie
 employ
-holiday
+holiday halId`
 dance
 vast
 resolution
@@ -2613,7 +2609,7 @@ relative
 immigration
 belt
 teaspoon
-birthday
+birthday brTd`
 implication
 perfectly
 coast
@@ -3430,7 +3426,7 @@ distinct
 artistic
 discourse
 basket
-ah
+ah A
 fighting
 impressive
 competitor
@@ -3465,7 +3461,7 @@ script
 tactic
 identification
 transformation
-everyday
+everyday `vrid`
 headline
 crash
 venture
@@ -4640,7 +4636,7 @@ desperately
 stance
 compel
 sensitivity
-someday
+someday smd`
 instant
 debut
 proclaim
@@ -4694,7 +4690,6 @@ depressed
 chunk
 closest
 discount
-no
 ladder
 jungle
 migration

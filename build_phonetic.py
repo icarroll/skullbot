@@ -4,6 +4,13 @@ commons = dict(lw(*line.split()) for line in open("common_5000.txt").readlines()
                if " " in line)
 
 extras = {
+    "sunday": "snd`",
+    "monday": "mnd`",
+    "tuesday": "tzd`",
+    "wednesday": "wnzd`",
+    "thursday": "Trzd`",
+    "friday": "fr!ad`",
+    "saturday": "sAtrd`",
     "skullbat": "sklbt",
     "netherfield": "nETrfild",
     "michaelmas": "mIklms",
@@ -112,6 +119,14 @@ extras = {
     "salutation": "slyteSn",
     "insufferably": "`nsfrbl`",
     "moments'": "mmnts",
+    "flogged": "flagd",
+    "iniquitous": "`nIkwts",
+    "hunsford": "h@nsfrd",
+    "westerham": "wEstrhm",
+    "bourgh": "bUrg",
+    "ladyship": "lediSp",
+    "se'ennight": "sEnn!at",
+    "servility": "srvIlIt`",
 }
 
 def xlat1(c):
