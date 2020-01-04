@@ -59,6 +59,8 @@ float hookrad = 2*halfstep/3;
 float dotrad = 2*halfstep/5;
 float voicedlen = 2*step/3;
 
+float vowel_size = halfstep + 2*dotrad;
+
 float leftx;
 float spinex;
 float rightx;
@@ -777,6 +779,34 @@ void render_digit(char c) {
         cairo_line_to(cr, spinex, riby+step);
         riby += step;
         break;
+    case '#':
+        // ordinal ideogram
+        cairo_move_to(cr, leftx, riby);
+        cairo_line_to(cr, spinex, riby);
+        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
+        riby += halfstep;
+        cairo_line_to(cr, rightx, riby);
+
+        /* TODO "rd" ligature perhaps?
+        riby += wordstep/2;
+
+        cairo_move_to(cr, rightx, riby);
+        cairo_line_to(cr, spinex-halfstep, riby);
+        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
+        riby += halfstep;
+        cairo_line_to(cr, spinex, riby);
+        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
+        riby += halfstep;
+
+        riby += wordstep/2;
+
+        cairo_move_to(cr, rightx, riby);
+        riby += halfstep;
+        cairo_line_to(cr, spinex-halfstep, riby);
+        cairo_rel_curve_to(cr, -3*halfstep,halfstep, -3*halfstep,halfstep, 0,halfstep);
+        riby += halfstep;
+        */
+        break;
     default:
         cout << "unknown digit: " << c << endl;
         break;
@@ -785,6 +815,12 @@ void render_digit(char c) {
 
 void render_numeral(string w) {
     for (char c : w) {
+        if (isalpha(c)) {
+            // assume it's an ordinal
+            render_digit('#');
+            break;
+        }
+
         render_digit(c);
         riby += wordstep/2;
     }
@@ -792,17 +828,35 @@ void render_numeral(string w) {
     cairo_stroke(cr);
 }
 
-void render_vowel(string vs, float vowelx) {
+void render_vowel(string v, float vowelx) {
     cairo_path_t * saved_path = cairo_copy_path(cr);
     cairo_new_path(cr);
 
-    if (vs[0] == '!') render_i_dipthong(vs[1], vowelx);
-    else if (vs[0] == '^') render_u_dipthong(vs[1], vowelx);
-    else render_monopthong(vs[0], vowelx);
+    if (v[0] == '!') render_i_dipthong(v[1], vowelx);
+    else if (v[0] == '^') render_u_dipthong(v[1], vowelx);
+    else render_monopthong(v[0], vowelx);
 
     cairo_new_path(cr);
     cairo_append_path(cr, saved_path);
     cairo_path_destroy(saved_path);
+}
+
+vector<string> split_vowels(string text) {
+    vector<string> vs;
+
+    int ix = 0;
+    while (ix < text.length()) {
+        if (text[ix] == '!' || text[ix] == '^') {
+            vs.push_back(text.substr(ix, 2));
+            ix += 2;
+        }
+        else {
+            vs.push_back(text.substr(ix, 1));
+            ix += 1;
+        }
+    }
+
+    return vs;
 }
 
 void render_punct(string w) {
@@ -822,6 +876,22 @@ void render_punct(string w) {
         cairo_line_to(cr, spinex-halfstep, riby+halfstep);
         cairo_stroke(cr);
         riby += step;
+    }
+    else if (w == "----") {
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex, riby, dotrad, 0, 2*M_PI);
+        riby += wordstep;
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex, riby, dotrad, 0, 2*M_PI);
+        riby += wordstep;
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex, riby, dotrad, 0, 2*M_PI);
+        /*
+        riby += wordstep;
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex, riby, dotrad, 0, 2*M_PI);
+        */
+        cairo_fill(cr);
     }
     else if (w == ",") {
         cairo_move_to(cr, spinex-step-halfstep, riby-halfstep);
@@ -869,6 +939,8 @@ bool isprosody(char c) {
     case '.':
     case '!':
     case '?':
+    case '(':
+    case ')':
     case '"':
     case ';':
     case ':':
@@ -944,10 +1016,14 @@ void render_phonetic_word(string w) {
         }
 
         // render vowel if any
+        float vowely_center;
         if (nextrib_ix < w.length() && vowel(w[ix+1])) {
             // there's a vowel then a following rib
-            if (w[ix] == '`') vowely = pregap_riby - halfstep/2;
-            else if (w[nextrib_ix] == '`') vowely = riby + halfstep/2;
+            string vtext = w.substr(ix + 1, nextrib_ix - ix - 1);
+            vector<string> vs = split_vowels(vtext);
+
+            if (w[ix] == '`') vowely_center = pregap_riby - halfstep/2;
+            else if (w[nextrib_ix] == '`') vowely_center = riby + halfstep/2;
             else {
                 // next rib is a consonant
                 float prevy, nexty;
@@ -965,18 +1041,22 @@ void render_phonetic_word(string w) {
                 else nexty = riby + vowel_space(w[nextrib_ix]).before;
 
                 float vowel_room = nexty - prevy;
-                float vowel_needs = halfstep + 2*dotrad;
+                float vowel_needs = vowel_size * vs.size();
                 if (vowel_room < vowel_needs) {
                     float skootch = vowel_needs - vowel_room;
                     riby += skootch;
                     nexty += skootch;
                 }
 
-                vowely = (prevy + nexty) / 2;
+                vowely_center = (prevy + nexty) / 2;
             }
 
             float vowelx = markx;
-            render_vowel(w.substr(ix+1), vowelx);
+            vowely = vowely_center - vowel_size * (vs.size()-1) / 2.0;
+            for (string v : vs) {
+                render_vowel(v, vowelx);
+                vowely += vowel_size;
+            }
         }
 
         ix = nextrib_ix;
@@ -1075,6 +1155,7 @@ vector<string> split_words(string text) {
             if (w.empty() || isalpha(w.back()) || w.back() == '\'') {
                 w.push_back(c);
             }
+            else if (isdigit(w.back())) w.push_back(c);
             else {
                 ws.push_back(w);
                 w.clear();
@@ -1104,6 +1185,8 @@ vector<string> split_words(string text) {
         case ':':
         case '!':
         case '?':
+        case '(':
+        case ')':
             if (! w.empty()) {
                 ws.push_back(w);
                 w.clear();
@@ -1200,6 +1283,7 @@ int main(int nargs, char * args[])
         }
     }
     paras.push_back(para);
+    //new_page();
     for (string para : paras) {
         if (para.substr(0,7) == "Chapter") {new_page(); cur_col-=1;}
         render_columns(para);
