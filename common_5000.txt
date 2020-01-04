@@ -405,6 +405,7 @@ away `w`
 until `ntl
 power pwr
 hour `wr
+hours `wrs
 game gm
 often `ftn
 yet yt
@@ -468,7 +469,7 @@ team tim
 minute mnt
 best bst
 several sfrl
-idea `diy`
+idea `!adi@`
 kid kd
 body bd`
 information `nfrmSn
@@ -479,10 +480,10 @@ leads lds
 leading ldN
 led ld
 social sSl
-understand `ntrstnt
-understands `ntrstnts
-understanding `ntrstntN
-understood `ntrstd
+understand `@ndErstAnd
+understands `@ndErstAndz
+understanding `@ndErstAndIN
+understood `@ndErstUd
 whether wTr
 watch wtS
 watches wtSs
@@ -721,6 +722,7 @@ decision
 explain
 son
 hope hop
+hopes hops
 develop
 view
 relationship
@@ -1296,7 +1298,7 @@ born
 admit
 senior
 assume
-wind
+wind wnd
 key
 professional
 mission
@@ -2838,7 +2840,6 @@ bottom
 testimony
 bunch
 beat
-wind
 found
 burden
 react
@@ -4111,8 +4112,8 @@ suffering
 full-time
 lamp
 garbage
-servant srfnt
-servants srfnts
+servant sErv@nt
+servants sErv@nts
 addition
 regulatory
 diplomatic
