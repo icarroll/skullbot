@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>
@@ -86,18 +87,50 @@ void new_column() {
 
 int page_number = 0;
 
-void render_columns(string text);
+bool even(int n) {
+    return n % 2 == 0;
+}
+
+vector<string> split_words(string text);
+vector<string> phoneticize_words(vector<string> ws);
+void render_phonetic_words(vector<string> & ws);
+void render_at_inches(string text, float x, float y) {
+    vector<string> ws = split_words(text);
+    vector<string> ps = phoneticize_words(ws);
+
+    // column is undefined in this context
+    cur_col = numeric_limits<int>::min();
+    col_bot = numeric_limits<float>::max();
+
+    spinex = x;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = y;
+    riby = starty;
+
+    render_phonetic_words(ps);
+}
+
+void mark_page_number() {
+    string text = to_string(page_number);
+    float x = even(page_number) ? MARGIN/2 : PAPER_WIDTH - MARGIN/2;
+    float y = MARGIN/2;
+    render_at_inches(text, x, y);
+}
+
 void new_page() {
     page_number += 1;
-    cur_row = 0;
-    cur_col = 0;
 
     if (page_number > 1) {
         cairo_surface_show_page(csurf);
-        cur_col = -2;
-        render_columns("page " + to_string(page_number));
-        cur_col = 0;
     }
+
+    mark_page_number();
+
+    cur_row = 0;
+    cur_col = 0;
 }
 
 //TODO change to render row separator in case rows != 2
