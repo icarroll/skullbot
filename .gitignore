@@ -1,0 +1,9 @@
+.*.sw?
+Pride*
+*.exe
+*.pdf
+*.png
+*.jpg
+chapter*
+*.txt
+*.tsv
