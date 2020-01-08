@@ -1026,10 +1026,33 @@ bool isprosody(char c) {
     }
 }
 
+void render_column_divider() {
+    float col_top = (cur_row == 0 ? MARGIN : MARGIN/2) + cur_row * PAPER_HEIGHT/ROWS_PER_PAGE;
+    float col_bot = col_top + COLUMN_HEIGHT;
+
+    float frac = COLUMN_HEIGHT / 3;
+
+    cairo_save(cr);
+    cairo_set_line_width(cr, LINE_WIDTH/2);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
+    cairo_set_source_rgb(cr, 0.5,0.5,0.5);
+    cairo_move_to(cr, spinex, col_top+frac);
+    cairo_line_to(cr, spinex, col_bot-frac);
+    cairo_stroke(cr);
+    cairo_restore(cr);
+}
+
 bool emphasis = false;
+
+const string STARS = "*****";
 
 void render_phonetic_word(string w) {
     riby = starty;
+
+    if (w == STARS) {
+        render_column_divider();
+        return;
+    }
 
     if (logogram(w[0])) {
         render_logogram_word(w);
@@ -1166,6 +1189,7 @@ void render_phonetic_words(vector<string> & ws) {
         if (starty > col_bot) {
             it += 1;
             while ((it != ws.end()) && isprosody((* it)[0])) {
+                if (* it == STARS) break;
                 if (* it == "(") break;
                 if (* it == "/") break;
                 render_phonetic_word(* it);
@@ -1182,6 +1206,7 @@ void render_phonetic_words(vector<string> & ws) {
 map<string, string> pronunciation;
 
 string phoneticize_word(string raw_w) {
+    if (raw_w == STARS) return raw_w;
     if (isdigit(raw_w[0])) return raw_w;
     if (isprosody(raw_w[0])) return raw_w;
     if (raw_w[0] == '\'') raw_w = raw_w.substr(1);
@@ -1205,15 +1230,23 @@ vector<string> phoneticize_words(vector<string> ws) {
     return ps;
 }
 
-set<string> abbrevs = {"Mrs", "Mr", "St"};
+set<string> abbrevs = {"Mrs", "Mr", "St", "EDW", "E", "M"};
 
 vector<string> split_words(string text) {
     vector<string> ws;
     string w;
 
     for (char c : text) {
+        // this whole * thing is an ugly hack
+        if (c == '*') {
+            w.push_back(c);
+
+            continue;
+        }
+
         if (isspace(c)) {
-            if (! w.empty()) {
+            if (w.back() == '*') continue;
+            else if (! w.empty()) {
                 ws.push_back(w);
                 w.clear();
             }
