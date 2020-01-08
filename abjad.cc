@@ -42,7 +42,6 @@ float LINE_WIDTH = SCALE*0.01;
 
 float unit = SCALE/5.0;
 
-
 float step = unit/4;
 float halfstep = step/2;
 float step2 = step*2;
@@ -51,9 +50,6 @@ float vowelstep = ribstep;
 float wordstep = step;
 float colstep = 3*unit/2;
 
-int cur_col = 0;
-int cur_row = 0;
-
 float elstep = step * sqrt(2)/2;
 
 float hookrad = 2*halfstep/3;
@@ -61,6 +57,33 @@ float dotrad = 2*halfstep/5;
 float voicedlen = 2*step/3;
 
 float vowel_size = halfstep + 2*dotrad;
+
+void set_scale(float newscale) {
+    SCALE = newscale;
+
+    LINE_WIDTH = SCALE*0.01;
+
+    unit = SCALE/5.0;
+
+    step = unit/4;
+    halfstep = step/2;
+    step2 = step*2;
+    ribstep = 2*step/3;
+    vowelstep = ribstep;
+    wordstep = step;
+    colstep = 3*unit/2;
+
+    elstep = step * sqrt(2)/2;
+
+    hookrad = 2*halfstep/3;
+    dotrad = 2*halfstep/5;
+    voicedlen = 2*step/3;
+
+    vowel_size = halfstep + 2*dotrad;
+}
+
+int cur_col = 0;
+int cur_row = 0;
 
 float leftx;
 float spinex;
@@ -721,11 +744,19 @@ void render_logogram_word(string w) {
     cairo_stroke(cr);
 }
 
+void render_vowel(string v, float vowelx);
 void render_vowel_word(string w) {
     if (w == "A") {
         cairo_new_sub_path(cr);
         cairo_arc(cr, spinex,riby, halfstep, 2*M_PI,M_PI);
         riby += halfstep;
+    }
+    else if (w == "E") {
+        riby += step;
+        cairo_move_to(cr, spinex, riby);
+        cairo_rel_curve_to(cr, step,0, step,-step, step,-step);
+        vowely = riby - halfstep;
+        render_vowel("i", markx);
     }
     else if (w == "I") {
         riby += step;
@@ -957,6 +988,16 @@ void render_punct(string w) {
         cairo_line_to(cr, spinex-step, riby);
         cairo_stroke(cr);
     }
+    else if (w == "(") {
+        cairo_move_to(cr, spinex, riby);
+        cairo_rel_curve_to(cr, -step,0, -step-halfstep,halfstep, -step-halfstep,step);
+        cairo_stroke(cr);
+    }
+    else if (w == ")") {
+        cairo_move_to(cr, spinex, riby);
+        cairo_rel_curve_to(cr, -step,0, -step-halfstep,-halfstep, -step-halfstep,-step);
+        cairo_stroke(cr);
+    }
     else cout << "unknown punct: " << w << endl;
 
     cairo_new_path(cr);
@@ -1125,6 +1166,7 @@ void render_phonetic_words(vector<string> & ws) {
         if (starty > col_bot) {
             it += 1;
             while ((it != ws.end()) && isprosody((* it)[0])) {
+                if (* it == "(") break;
                 if (* it == "/") break;
                 render_phonetic_word(* it);
                 starty = riby + wordstep;
@@ -1316,10 +1358,19 @@ int main(int nargs, char * args[])
         }
     }
     paras.push_back(para);
-    //new_page();
+    new_page();
+    set_scale(7);
     for (string para : paras) {
-        if (para.substr(0,7) == "Chapter") {new_page(); cur_col-=1;}
-        render_columns(para);
+        if (para.substr(0,7) == "Chapter") {
+            set_scale(1);
+            new_page();
+            set_scale(2);
+            render_at_inches(para, MARGIN+step, MARGIN);
+            set_scale(1);
+            cur_col = 1;
+            new_column();
+        }
+        else render_columns(para);
     }
 
     cairo_surface_show_page(csurf);
