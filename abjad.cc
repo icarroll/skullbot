@@ -23,6 +23,7 @@ void die(string message) {
 }
 
 const float POINTS_PER_INCH = 72.0;
+const float FONT_SIZE = 12.0;
 
 const float PAPER_WIDTH = 5.5;
 const float PAPER_HEIGHT = 8.5;
@@ -609,6 +610,7 @@ void render_i_dipthong(char c, float vowelx) {
         cairo_stroke(cr);
         break;
     case 'o':   // !o oi soy
+        //TODO open circle because it begins rounded
         x -= halfstep /2;
         y += halfstep * sqrt(3)/2 /2;
         cairo_new_sub_path(cr);
@@ -903,6 +905,11 @@ void render_vowel(string v, float vowelx) {
     cairo_new_path(cr);
     cairo_append_path(cr, saved_path);
     cairo_path_destroy(saved_path);
+}
+
+void render_vowel_at(string v, float x, float y) {
+    vowely = y;
+    render_vowel(v, x);
 }
 
 vector<string> split_vowels(string text) {
@@ -1344,6 +1351,214 @@ void draw_skull_bat(float width, float x, float y) {
 
 }
 
+void render_latin(string text, float x, float y) {
+    cairo_move_to(cr, x, y);
+    cairo_show_text(cr, text.c_str());
+
+    cairo_set_source_rgb(cr, 0,0,0);
+    cairo_fill(cr);
+}
+
+void render_skullbat(string text, float x, float y) {
+    // column is undefined in this context
+    cur_col = numeric_limits<int>::min();
+    col_bot = numeric_limits<float>::max();
+
+    spinex = x;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = y;
+    riby = starty;
+
+    render_phonetic_word(text);
+}
+
+void render_key_page() {
+    draw_skull_bat(1, PAPER_WIDTH/2-0.5, MARGIN - 3.0/4.0 /2);
+
+    set_scale(1.5);
+
+    cairo_select_font_face(cr, "DejaVu Serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, FONT_SIZE/POINTS_PER_INCH);
+
+    cairo_font_extents_t fe;
+    cairo_text_extents_t te;
+    cairo_font_extents(cr, & fe);
+
+    int x = 0;
+    int y = 0;
+
+    render_latin("Skullbat Key", MARGIN, MARGIN+fe.height+ y *1.5*fe.height);
+
+    cairo_select_font_face(cr, "DejaVu Serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_font_extents(cr, & fe);
+    cairo_text_extents(cr, "W", & te);
+
+    y += 1;
+    render_latin("Consonants", MARGIN, MARGIN+fe.height + y *1.5*fe.height);
+    y += 1;
+    render_latin("(voicing mark is optional if unambiguous)", MARGIN, MARGIN+fe.height + y *1.5*fe.height);
+
+    y += 1;
+    x = 0;
+    for (string s : {"P","B","M","F","V","W"}) {
+        render_latin(s, MARGIN+x*0.6, MARGIN+fe.height + y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"p","b","m","f","v","w"}) {
+        render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    y += 1;
+    x = 0;
+    for (string s : {"","","","TH","DH",""}) {
+        float nudge = s.length() > 1 ? 0.1 : 0;
+        render_latin(s, MARGIN+x*0.6-nudge, MARGIN+fe.height + y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"","","","T","D",""}) {
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    y += 1;
+    x = 0;
+    for (string s : {"T","D","N","S","Z","L"}) {
+        render_latin(s, MARGIN+x*0.6, MARGIN+fe.height + y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"t","d","n","s","z","l"}) {
+        render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    y += 1;
+    x = 0;
+    for (string s : {"","","","SH","ZH","R"}) {
+        float nudge = s.length() > 1 ? 0.1 : 0;
+        render_latin(s, MARGIN+x*0.6-nudge, MARGIN+fe.height + y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"","","","S","Z","r"}) {
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    y += 1;
+    x = 0;
+    for (string s : {"K","G","NG","","","Y"}) {
+        float nudge = s.length() > 1 ? 0.1 : 0;
+        render_latin(s, MARGIN+x*0.6-nudge, MARGIN+fe.height + y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"k","g","N","","","y"}) {
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    y += 1;
+    x = 0;
+    for (string s : {"","","","H","",""}) {
+        float nudge = s.length() > 1 ? 0.1 : 0;
+        render_latin(s, MARGIN+x*0.6-nudge, MARGIN+fe.height + y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"","","","h","",""}) {
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    y += 1;
+    render_latin("Vowels", MARGIN, MARGIN+fe.height + y *1.5*fe.height);
+
+    y += 1;
+    render_latin("Full words only", MARGIN, MARGIN+fe.height + y *1.5*fe.height);
+
+    y += 1;
+    x = 0;
+    for (string s : {"A","E","I","O","U"}) {
+        float nudge = s.length() > 1 ? 0.1 : 0;
+        render_latin(s, MARGIN+x*0.6-nudge, MARGIN+fe.height + y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"A","E","I","O","yu`"}) {
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    y += 1;
+    render_latin("Diacritics (optional if unambiguous)", MARGIN, MARGIN+fe.height+ y *1.5*fe.height);
+    set_scale(3);
+
+    y += 1;
+    render_latin("monopthongs", MARGIN, MARGIN+fe.height+ y *1.5*fe.height);
+
+    int yy = 0;
+
+    y += 1;
+
+    x = 0;
+    yy = y;
+    for (string s : {"i","ɪ","e","ɛ","æ"}) {
+        render_latin("/"+s+"/", MARGIN+x*1.0, MARGIN+fe.height+ yy *1.5*fe.height);
+        yy += 1;
+    }
+    yy = y;
+    for (string s : {"i","I","e","E","A"}) {
+        if (s.length()) render_vowel_at(s, MARGIN+x*1.0+te.width*2.5, MARGIN+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        yy += 1;
+    }
+    x = 1;
+    yy = y;
+    for (string s : {"","","ə","","a"}) {
+        if (s.length()) render_latin("/"+s+"/", MARGIN+x*1.0, MARGIN+fe.height+ yy *1.5*fe.height);
+        yy += 1;
+    }
+    yy = y;
+    for (string s : {"","","@","","a"}) {
+        if (s.length()) render_vowel_at(s, MARGIN+x*1.0+te.width*2.5, MARGIN+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        yy += 1;
+    }
+    x = 2;
+    yy = y;
+    for (string s : {"u","ʊ","o","","ɒ"}) {
+        if (s.length()) render_latin("/"+s+"/", MARGIN+x*1.0, MARGIN+fe.height+ yy *1.5*fe.height);
+        yy += 1;
+    }
+    yy = y;
+    for (string s : {"u","U","o","","O"}) {
+        if (s.length()) render_vowel_at(s, MARGIN+x*1.0+te.width*2.5, MARGIN+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        yy += 1;
+    }
+
+    y += 5;
+    render_latin("dipthongs", MARGIN, MARGIN+fe.height + y *1.5*fe.height);
+
+    y += 1;
+    x = 0;
+    for (string s : {"ei","ai","oi","au","ou"}) {
+        render_latin("/"+s+"/", MARGIN+x*0.7, MARGIN+fe.height+ y *1.5*fe.height);
+        x += 1;
+    }
+    x = 0;
+    for (string s : {"!e","!a","!o","^a","^o"}) {
+        render_vowel_at(s, MARGIN+x*0.7+te.width*2.5, MARGIN+fe.height*2.0/3.0 + y *1.5*fe.height);
+        x += 1;
+    }
+
+    set_scale(1);
+}
+
 void load_phonetic() {
     ifstream phonetics("pronunciation.txt");
     string word, phonetic;
@@ -1373,8 +1588,6 @@ int main(int nargs, char * args[])
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
-    //draw_skull_bat(0.5, MARGIN/3, MARGIN);
-
     cairo_set_line_width(cr, LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
@@ -1397,15 +1610,21 @@ int main(int nargs, char * args[])
         if (para.substr(0,7) == "Chapter") {
             set_scale(1);
             new_page();
+
+            // chapter heading
             set_scale(2);
             render_at_inches(para, MARGIN+step, MARGIN);
             set_scale(1);
-            cur_col = 1;
+
+            cur_col = 1; //TODO new_column should take a column argument
             new_column();
         }
         else render_columns(para);
     }
 
+    new_page();
+
+    render_key_page();
     cairo_surface_show_page(csurf);
 
     cairo_destroy(cr);
