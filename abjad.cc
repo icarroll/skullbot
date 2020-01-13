@@ -861,26 +861,6 @@ void render_digit(char c) {
         cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
         riby += halfstep;
         cairo_line_to(cr, rightx, riby);
-
-        /* TODO "rd" ligature perhaps?
-        riby += wordstep/2;
-
-        cairo_move_to(cr, rightx, riby);
-        cairo_line_to(cr, spinex-halfstep, riby);
-        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
-        riby += halfstep;
-        cairo_line_to(cr, spinex, riby);
-        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
-        riby += halfstep;
-
-        riby += wordstep/2;
-
-        cairo_move_to(cr, rightx, riby);
-        riby += halfstep;
-        cairo_line_to(cr, spinex-halfstep, riby);
-        cairo_rel_curve_to(cr, -3*halfstep,halfstep, -3*halfstep,halfstep, 0,halfstep);
-        riby += halfstep;
-        */
         break;
     default:
         cout << "unknown digit: " << c << endl;
