@@ -763,9 +763,8 @@ void render_vowel_word(string w) {
         riby += halfstep;
     }
     else if (w == "E") {
-        riby += step;
-        cairo_move_to(cr, spinex, riby);
-        cairo_rel_curve_to(cr, step,0, step,-step, step,-step);
+        cairo_arc(cr, spinex,riby, halfstep, 2*M_PI,M_PI);
+        riby += halfstep;
         vowely = riby - halfstep;
         render_vowel("i", markx);
     }
@@ -779,6 +778,14 @@ void render_vowel_word(string w) {
         cairo_new_sub_path(cr);
         cairo_arc(cr, spinex,riby, halfstep, 0,2*M_PI);
         riby += halfstep;
+    }
+    else if (w == "U") {
+        riby += halfstep;
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, spinex,riby, halfstep, 0,2*M_PI);
+        riby += halfstep;
+        vowely = riby - halfstep;
+        render_vowel("u", markx);
     }
     else cout << "unknown vowel word: " << w << endl;
 
@@ -1476,13 +1483,13 @@ void render_key_page() {
 
     y += 1;
     x = 0;
-    for (string s : {"A","E","I","O","U"}) {
+    for (string s : {"A","E","I","O","OO"}) {
         float nudge = s.length() > 1 ? 0.1 : 0;
         render_latin(s, MARGIN+x*0.6-nudge, MARGIN+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
-    for (string s : {"A","E","I","O","yu`"}) {
+    for (string s : {"A","E","I","O","U"}) {
         if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
