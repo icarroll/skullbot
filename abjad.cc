@@ -63,6 +63,7 @@ void set_scale(float newscale) {
     SCALE = newscale;
 
     LINE_WIDTH = SCALE*0.01;
+    cairo_set_line_width(cr, LINE_WIDTH/2);
 
     unit = SCALE/5.0;
 
@@ -613,13 +614,27 @@ void render_i_dipthong(char c, float vowelx) {
         //TODO open circle because it begins rounded
         x -= halfstep /2;
         y += halfstep * sqrt(3)/2 /2;
-        cairo_new_sub_path(cr);
-        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
-        cairo_fill(cr);
         cairo_move_to(cr, x, y);
         cairo_rel_line_to(cr, halfstep, 0);
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
         cairo_stroke(cr);
+
+        /*
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_fill(cr);
+        */
+        cairo_save(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 1,1,1);
+        cairo_fill(cr);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
+        cairo_set_source_rgb(cr, 0,0,0);
+        cairo_stroke(cr);
+        cairo_restore(cr);
+
         break;
     default:
         cout << "unknown i dipthong: " << c << endl;
@@ -1401,6 +1416,8 @@ void render_key_page() {
     y += 1;
     render_latin("(voicing mark is optional if unambiguous)", MARGIN, MARGIN+fe.height + y *1.5*fe.height);
 
+    const float SKT = 1.6667;
+
     y += 1;
     x = 0;
     for (string s : {"P","B","M","F","V","W"}) {
@@ -1409,7 +1426,7 @@ void render_key_page() {
     }
     x = 0;
     for (string s : {"p","b","m","f","v","w"}) {
-        render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1422,7 +1439,7 @@ void render_key_page() {
     }
     x = 0;
     for (string s : {"","","","T","D",""}) {
-        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1434,7 +1451,7 @@ void render_key_page() {
     }
     x = 0;
     for (string s : {"t","d","n","s","z","l"}) {
-        render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1447,7 +1464,7 @@ void render_key_page() {
     }
     x = 0;
     for (string s : {"","","","S","Z","r"}) {
-        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1460,7 +1477,7 @@ void render_key_page() {
     }
     x = 0;
     for (string s : {"k","g","N","","","y"}) {
-        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1473,7 +1490,7 @@ void render_key_page() {
     }
     x = 0;
     for (string s : {"","","","h","",""}) {
-        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1492,7 +1509,7 @@ void render_key_page() {
     }
     x = 0;
     for (string s : {"A","E","I","O","yu`"}) {
-        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*1.5, MARGIN+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, MARGIN+x*0.6+te.width*SKT, MARGIN+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
