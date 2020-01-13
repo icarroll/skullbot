@@ -611,7 +611,6 @@ void render_i_dipthong(char c, float vowelx) {
         cairo_stroke(cr);
         break;
     case 'o':   // !o oi soy
-        //TODO open circle because it begins rounded
         x -= halfstep /2;
         y += halfstep * sqrt(3)/2 /2;
         cairo_move_to(cr, x, y);
@@ -619,11 +618,6 @@ void render_i_dipthong(char c, float vowelx) {
         cairo_rel_line_to(cr, -halfstep/2, -halfstep * sqrt(3)/2);
         cairo_stroke(cr);
 
-        /*
-        cairo_new_sub_path(cr);
-        cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
-        cairo_fill(cr);
-        */
         cairo_save(cr);
         cairo_new_sub_path(cr);
         cairo_arc(cr, x, y, dotrad, 0, 2*M_PI);
