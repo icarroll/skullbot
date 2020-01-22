@@ -3148,7 +3148,7 @@ witness
 chapter
 fellow
 divorce
-owe
+owe O
 pipe
 athletic
 slight
