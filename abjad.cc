@@ -34,7 +34,7 @@ const float PAPER_HEIGHT = 8.5;
 
 const float MARGIN = 1.0;
 
-const float ROWS_PER_PAGE = 2;
+float ROWS_PER_PAGE = 2;
 
 float COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
 
@@ -86,6 +86,11 @@ void set_scale(float newscale) {
     voicedlen = 2*step/3;
 
     vowel_size = halfstep + 2*dotrad;
+}
+
+void set_row_count(int n) {
+    ROWS_PER_PAGE = n;
+    COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
 }
 
 int cur_col = 0;
@@ -162,25 +167,27 @@ void new_page() {
     cur_col = 0;
 }
 
-//TODO change to render row separator in case rows != 2
-void render_midline() {
+void render_row_separator(int row) {
     cairo_save(cr);
     cairo_set_line_width(cr, LINE_WIDTH/2);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
-    cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
-    cairo_line_to(cr, PAPER_WIDTH-MARGIN,PAPER_HEIGHT/2);
+    //cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
+    float row_height = (PAPER_HEIGHT-MARGIN*2) / ROWS_PER_PAGE;
+    float sepy = MARGIN + row_height * row;
+    cairo_move_to(cr, MARGIN,sepy);
+    cairo_line_to(cr, PAPER_WIDTH-MARGIN,sepy);
     cairo_stroke(cr);
     cairo_restore(cr);
 }
 
 void new_row() {
-    render_midline();
-
     cur_row += 1;
     cur_col = 0;
 
     if (cur_row >= ROWS_PER_PAGE) new_page();
+    else render_row_separator(cur_row);
+
     new_column();
 }
 
@@ -1901,11 +1908,11 @@ int main(int nargs, char * args[])
 
     new_page();
     set_scale(7);
-    COLUMN_HEIGHT = PAPER_HEIGHT - MARGIN*2;
+    set_row_count(1);
     for (string para : paras) {
         if (para.substr(0,7) == "Chapter") {
             set_scale(1);
-            COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
+            set_row_count(2);
             new_page();
 
             // chapter heading
