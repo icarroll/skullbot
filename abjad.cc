@@ -22,6 +22,10 @@ void die(string message) {
     exit(1);
 }
 
+float nan() {
+    return numeric_limits<float>::signaling_NaN();
+}
+
 const float POINTS_PER_INCH = 72.0;
 const float FONT_SIZE = 12.0;
 
@@ -32,7 +36,7 @@ const float MARGIN = 1.0;
 
 const float ROWS_PER_PAGE = 2;
 
-const float COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
+float COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
 
 cairo_t * cr;
 cairo_surface_t * csurf;
@@ -183,6 +187,62 @@ void new_row() {
 void render_voice_mark(float offset=0.0) {
     cairo_move_to(cr, markx, riby - voicedlen/2 + offset);
     cairo_line_to(cr, markx, riby + voicedlen/2 + offset);
+}
+
+float size_consonant(char c) {
+    float size = 0;
+
+    switch (c) {
+    case 'b':
+    case 'p':
+        break;
+    case 'v':
+    case 'f':
+        size += halfstep;
+        break;
+    case 'D':
+    case 'T':
+        size += halfstep;
+        break;
+    case 'd':
+    case 't':
+        break;
+    case 'z':
+    case 's':
+        size += halfstep;
+        break;
+    case 'Z':
+    case 'S':
+        size += halfstep;
+        break;
+    case 'g':
+    case 'k':
+        break;
+    case 'h':
+        size += halfstep;
+        break;
+    case 'w':
+        size += step;
+        break;
+    case 'l':
+    case 'r':
+        size += 2*elstep;
+        break;
+    case 'y':
+        size += step;
+        break;
+    case 'm':
+    case 'n':
+    case 'N':
+        size += 3*step/4;
+        break;
+    default:
+        // unimplemented letter
+        size += step;
+        break;
+    }
+
+    return size;
 }
 
 void render_consonant(char c) {
@@ -418,6 +478,10 @@ vowel_space_t vowel_space(char c) {
         return {0,0};
         break;
     }
+}
+
+float size_vowel_hook() {
+    return halfstep;
 }
 
 void render_vowel_hook() {
@@ -731,6 +795,15 @@ bool logogram(char c) {
     }
 }
 
+float size_logogram_word(string w) {
+    float size = nan();
+
+    if (w == "&") size = step*2;
+    else if (w == "XXX") size = step; // red mark for unknown word
+
+    return size;
+}
+
 void render_logogram_word(string w) {
     if (w == "&") {
         cairo_new_sub_path(cr);
@@ -753,6 +826,18 @@ void render_logogram_word(string w) {
     else cout << "unknown logogram word: " << w << endl;
 
     cairo_stroke(cr);
+}
+
+float size_vowel_word(string w) {
+    float size = nan();
+
+    if (w == "A") size = halfstep;
+    else if (w == "E") size = halfstep;
+    else if (w == "I") size = step;
+    else if (w == "O") size = step;
+    else if (w == "U") size = step;
+
+    return size;
 }
 
 void render_vowel(string v, float vowelx);
@@ -790,6 +875,33 @@ void render_vowel_word(string w) {
     else cout << "unknown vowel word: " << w << endl;
 
     cairo_stroke(cr);
+}
+
+float size_digit(char c) {
+    float size = nan();
+
+    switch (c) {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+        size = step;
+        break;
+    case '#':
+        // ordinal ideogram
+        size = halfstep;
+        break;
+    default:
+        break;
+    }
+
+    return size;
 }
 
 void render_digit(char c) {
@@ -875,6 +987,23 @@ void render_digit(char c) {
     }
 }
 
+float size_numeral(string w) {
+    float size = 0;
+
+    for (char c : w) {
+        if (isalpha(c)) {
+            // assume it's an ordinal
+            size += size_digit('#');
+            break;
+        }
+
+        size += size_digit(c);
+        size += wordstep/2; //TODO omit this at end of numeral?
+    }
+
+    return size;
+}
+
 void render_numeral(string w) {
     for (char c : w) {
         if (isalpha(c)) {
@@ -888,6 +1017,10 @@ void render_numeral(string w) {
     }
 
     cairo_stroke(cr);
+}
+
+float size_vowel(string v, float vowelx, float vowely) {
+    return 0;
 }
 
 void render_vowel(string v, float vowelx) {
@@ -924,6 +1057,24 @@ vector<string> split_vowels(string text) {
     }
 
     return vs;
+}
+
+float size_punct(string w) {
+    float size = nan();
+
+    if (w == "-") size = 0;
+    else if (w == "--" || w == ";" || w == ":") size = step;
+    else if (w == "----") size = wordstep*2;
+    else if (w == ",") size = 0;
+    else if (w == ".") size = 0;
+    else if (w == "!") size = 0;
+    else if (w == "?") size = 0;
+    else if (w == "\"") size = ribstep;
+    else if (w == "(") size = 0;
+    else if (w == ")") size = 0;
+    else if (w == "/") size = 0;   //TODO move this into word object
+
+    return size;
 }
 
 void render_punct(string w) {
@@ -1029,6 +1180,11 @@ bool isprosody(char c) {
     }
 }
 
+float size_column_divider() {
+    // size is undefined and should never be used
+    return nan();
+}
+
 void render_column_divider() {
     float col_top = (cur_row == 0 ? MARGIN : MARGIN/2) + cur_row * PAPER_HEIGHT/ROWS_PER_PAGE;
     float col_bot = col_top + COLUMN_HEIGHT;
@@ -1048,6 +1204,122 @@ void render_column_divider() {
 bool emphasis = false;
 
 const string STARS = "*****";
+
+float size_phonetic_word(string w) {
+    float temp_riby = starty;
+
+    if (w == STARS) {
+        return size_column_divider();
+    }
+
+    if (logogram(w[0])) {
+        return size_logogram_word(w);
+    }
+
+    // this must come before vowel() because '!' is a "vowel"
+    if (isprosody(w[0])) {
+        return size_punct(w);
+    }
+
+    if (vowel(w[0])) {
+        return size_vowel_word(w);
+    }
+
+    if (isdigit(w[0])) {
+        return size_numeral(w);
+    }
+
+    if (w[0] != '`') temp_riby += ribstep/2;
+
+    int ix = 0;
+    int lastrib_ix;
+    while (ix < w.length()) {
+        int nextrib_ix = ix + 1;
+        while (nextrib_ix<w.length() && vowel(w[nextrib_ix])) nextrib_ix += 1;
+
+        float prerib_riby = temp_riby;
+        if (w[ix] == '`') temp_riby += size_vowel_hook();
+        else temp_riby += size_consonant(w[ix]);
+        float rib_height = temp_riby - prerib_riby;
+
+        float pregap_riby = temp_riby;
+
+        // do current and next ribs need a gap?
+        fills_t fills = consonant_fills(w[ix]);
+        if (nextrib_ix<w.length()) {
+            fills_t fills2 = consonant_fills(w[nextrib_ix]);
+            if (fills.l_bot && fills2.l_top
+             || fills.c_bot && fills2.c_top
+             || fills.r_bot && fills2.r_top
+             ) {
+                // gap
+                temp_riby += ribstep;
+            }
+            else {
+                // no gap
+                //XXX experiment with small gap due to eg "disquiet"
+                temp_riby += ribstep/3;
+            }
+        }
+        else {
+            // no next rib
+            lastrib_ix = ix;
+        }
+
+        // size vowel if any
+        float vowely_center;
+        if (nextrib_ix < w.length() && vowel(w[ix+1])) {
+            // there's a vowel then a following rib
+            string vtext = w.substr(ix + 1, nextrib_ix - ix - 1);
+            vector<string> vs = split_vowels(vtext);
+
+            if (w[ix] == '`') vowely_center = pregap_riby - halfstep/2;
+            else if (w[nextrib_ix] == '`') vowely_center = temp_riby + halfstep/2;
+            else {
+                // next rib is a consonant
+                float prevy, nexty;
+
+                // this only works because voiced ribs never have vowel space
+                if (voiced(w[ix])) {
+                    prevy = pregap_riby - rib_height/2 + voicedlen/2;
+                }
+                else prevy = pregap_riby - vowel_space(w[ix]).after;
+
+                if (voiced(w[nextrib_ix])) {
+                    //TODO assume 0 because we don't know height of next rib
+                    nexty = temp_riby + 0/2 - voicedlen/2;
+                }
+                else nexty = temp_riby + vowel_space(w[nextrib_ix]).before;
+
+                float vowel_room = nexty - prevy;
+                float vowel_needs = vowel_size * vs.size();
+                if (vowel_room < vowel_needs) {
+                    float skootch = vowel_needs - vowel_room;
+                    temp_riby += skootch;
+                    nexty += skootch;
+                }
+
+                vowely_center = (prevy + nexty) / 2;
+            }
+
+            float vowelx = markx;
+            float temp_vowely = vowely_center - vowel_size * (vs.size()-1) / 2.0;
+            for (string v : vs) {
+                size_vowel(v, vowelx, temp_vowely);
+                temp_vowely += vowel_size;
+            }
+        }
+
+        ix = nextrib_ix;
+    }
+
+    if (w[lastrib_ix] == '`') temp_riby -= halfstep;
+    else temp_riby += ribstep/2;
+
+    if (w[lastrib_ix] == '`') temp_riby += halfstep;
+
+    return temp_riby - starty;
+}
 
 void render_phonetic_word(string w) {
     riby = starty;
@@ -1179,8 +1451,7 @@ void render_phonetic_word(string w) {
 }
 
 void render_phonetic_words(vector<string> & ws) {
-    for (auto it=ws.begin() ; it!=ws.end() ; ++it) {
-        auto w = * it;
+    for (auto w : ws) {
         if (w == "/") {
             emphasis = ! emphasis;
             continue;
@@ -1188,22 +1459,7 @@ void render_phonetic_words(vector<string> & ws) {
 
         render_phonetic_word(w);
         starty = riby + wordstep;
-        //TODO move this into render_column
-        if (starty > col_bot) {
-            it += 1;
-            while ((it != ws.end()) && isprosody((* it)[0])) {
-                if (* it == STARS) break;
-                if (* it == "(") break;
-                if (* it == "/") break;
-                render_phonetic_word(* it);
-                starty = riby + wordstep;
-                it += 1;
-            }
-            ws.assign(it, ws.end());
-            return;
-        }
     }
-    ws.clear();
 }
 
 map<string, string> pronunciation;
@@ -1330,7 +1586,47 @@ void render_column(vector<string> & ps) {
 void render_columns(string text) {
     vector<string> ws = split_words(text);
     vector<string> ps = phoneticize_words(ws);
-    while (ps.size()) render_column(ps);
+
+    vector<string> col_ps;
+    float col_size = 0;
+    for (auto it=ps.begin() ; it!=ps.end() ; ++it) {
+        auto w = * it;
+        float word_size = size_phonetic_word(w);
+        if (isnan(word_size)) {
+            render_column(col_ps);
+            col_ps.clear();
+            col_size = 0;
+            render_phonetic_word(w);
+        }
+        else if (col_size + word_size <= COLUMN_HEIGHT) {
+            //cout << w << " : " << word_size << endl;
+            col_ps.push_back(w);
+            col_size += word_size + wordstep;
+        }
+        else {
+            /*
+            it += 1;
+            while ((it != ps.end()) && isprosody((* it)[0])) {
+                if (* it == STARS) break;
+                if (* it == "(") break;
+                if (* it == "/") break;
+                word_size = size_phonetic_word(* it);
+                cout << * it << " : " << word_size << endl;
+                col_ps.push_back(* it);
+                col_size += word_size + wordstep;
+                it += 1;
+            }
+            */
+            render_column(col_ps);
+            col_ps.clear();
+            col_size = 0;
+
+            col_ps.push_back(w);
+            col_size += word_size + wordstep;
+        }
+    }
+
+    if (! col_ps.empty()) render_column(col_ps);
 }
 
 void draw_skull_bat(float width, float x, float y) {
@@ -1602,11 +1898,14 @@ int main(int nargs, char * args[])
         }
     }
     paras.push_back(para);
+
     new_page();
     set_scale(7);
+    COLUMN_HEIGHT = PAPER_HEIGHT - MARGIN*2;
     for (string para : paras) {
         if (para.substr(0,7) == "Chapter") {
             set_scale(1);
+            COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
             new_page();
 
             // chapter heading
