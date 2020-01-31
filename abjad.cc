@@ -26,6 +26,8 @@ float nan() {
     return numeric_limits<float>::signaling_NaN();
 }
 
+cairo_surface_t * csurf;
+
 const float POINTS_PER_INCH = 72.0;
 const float FONT_SIZE = 12.0;
 
@@ -34,42 +36,121 @@ const float PAPER_HEIGHT = 8.5;
 
 const float MARGIN = 1.0;
 
-float ROWS_PER_PAGE = 2;
+struct vowel_space_t {
+    float before;
+    float after;
+};
 
-float COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
+struct skullbat_context_t {
+    cairo_t * cr;
 
-cairo_t * cr;
-cairo_surface_t * csurf;
+    float scale;
 
-float SCALE = 1.0;
+    float line_width;
 
-float LINE_WIDTH = SCALE*0.01;
+    float rows_per_page;
+    float column_height;
 
-float unit = SCALE/5.0;
+    float unit;
 
-float step = unit/4;
-float halfstep = step/2;
-float step2 = step*2;
-float ribstep = 2*step/3;
-float vowelstep = ribstep;
-float wordstep = step;
-float colstep = 3*unit/2;
+    float step;
+    float halfstep;
+    float step2;
+    float ribstep;
+    float vowelstep;
+    float wordstep;
+    float colstep;
 
-float elstep = step * sqrt(2)/2;
+    float elstep;
 
-float hookrad = 2*halfstep/3;
-float dotrad = 2*halfstep/5;
-float voicedlen = 2*step/3;
+    float hookrad;
+    float dotrad;
+    float voicedlen;
 
-float vowel_size = halfstep + 2*dotrad;
+    float vowel_size;
 
-void set_scale(float newscale) {
-    SCALE = newscale;
+    int page_number = 0;
 
-    LINE_WIDTH = SCALE*0.01;
-    cairo_set_line_width(cr, LINE_WIDTH/2);
+    int cur_col = 0;
+    int cur_row = 0;
 
-    unit = SCALE/5.0;
+    float leftx;
+    float spinex;
+    float rightx;
+    float markx;
+
+    float starty;
+    float riby;
+    float vowely;
+    float col_bot;
+
+    bool emphasis = false;
+
+    skullbat_context_t(float newscale=1.0, int newrows=2) {
+        cr = cairo_create(csurf);
+        cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
+
+        cairo_set_line_width(cr, line_width);
+        cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+        cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+        cairo_set_source_rgb(cr, 0,0,0);
+
+        set_scale(newscale);
+        set_row_count(newrows);
+    }
+
+    ~skullbat_context_t() {
+        cairo_destroy(cr);
+    }
+
+    void set_scale(float newscale);
+    void set_row_count(int n);
+    void new_column(int newcol);
+    void render_at_inches(string text, float x, float y);
+    void mark_page_number();
+    void new_page();
+    void render_row_separator(int row);
+    void new_row();
+    void render_voice_mark(float offset);
+    float size_consonant(char c);
+    void render_consonant(char c);
+    vowel_space_t vowel_space(char c);
+    float size_vowel_hook();
+    void render_vowel_hook();
+    void render_monopthong(char c, float vowelx);
+    void render_i_dipthong(char c, float vowelx);
+    void render_u_dipthong(char c, float vowelx);
+    float size_logogram_word(string w);
+    void render_logogram_word(string w);
+    float size_vowel_word(string w);
+    void render_vowel_word(string w);
+    float size_digit(char c);
+    void render_digit(char c);
+    float size_numeral(string w);
+    void render_numeral(string w);
+    float size_vowel(string v, float vowelx, float vowely);
+    void render_vowel(string v, float vowelx);
+    void render_vowel_at(string v, float x, float y);
+    float size_punct(string w);
+    void render_punct(string w);
+    float size_column_divider();
+    void render_column_divider();
+    float size_phonetic_word(string w);
+    void render_phonetic_word(string w);
+    void render_phonetic_words(vector<string> & ws);
+    void render_column(vector<string> & ps);
+    void render_columns(string text);
+};
+
+using sb_t = skullbat_context_t;
+
+void sb_t::set_scale(float newscale) {
+    scale = newscale;
+
+    line_width = scale*0.01;
+    cairo_set_line_width(cr, line_width/2);
+
+    unit = scale/5.0;
 
     step = unit/4;
     halfstep = step/2;
@@ -77,7 +158,7 @@ void set_scale(float newscale) {
     ribstep = 2*step/3;
     vowelstep = ribstep;
     wordstep = step;
-    colstep = 3*unit/2;
+    colstep = 2*unit/2;
 
     elstep = step * sqrt(2)/2;
 
@@ -88,38 +169,25 @@ void set_scale(float newscale) {
     vowel_size = halfstep + 2*dotrad;
 }
 
-void set_row_count(int n) {
-    ROWS_PER_PAGE = n;
-    COLUMN_HEIGHT = (PAPER_HEIGHT - MARGIN) / ROWS_PER_PAGE - MARGIN;
+void sb_t::set_row_count(int n) {
+    rows_per_page = n;
+    column_height = (PAPER_HEIGHT - MARGIN) / rows_per_page - MARGIN;
 }
 
-int cur_col = 0;
-int cur_row = 0;
+void sb_t::new_column(int newcol=-1) {
+    if (newcol != -1) cur_col = newcol;
 
-float leftx;
-float spinex;
-float rightx;
-float markx;
-
-float starty;
-float riby;
-float vowely;
-float col_bot;
-
-void new_column() {
     spinex = MARGIN + step + cur_col*colstep;
-    cur_col += 1;
+    if (newcol == -1) cur_col += 1;
     leftx = spinex - step;
     rightx = spinex + step;
     markx = rightx + halfstep;
 
-    starty = (cur_row == 0 ? MARGIN : MARGIN/2) + cur_row * PAPER_HEIGHT/ROWS_PER_PAGE;
+    starty = (cur_row == 0 ? MARGIN : MARGIN/2) + cur_row * PAPER_HEIGHT/rows_per_page;
     riby = starty;
 
-    col_bot = starty + COLUMN_HEIGHT;
+    col_bot = starty + column_height;
 }
-
-int page_number = 0;
 
 bool even(int n) {
     return n % 2 == 0;
@@ -127,8 +195,10 @@ bool even(int n) {
 
 vector<string> split_words(string text);
 vector<string> phoneticize_words(vector<string> ws);
+/*
 void render_phonetic_words(vector<string> & ws);
-void render_at_inches(string text, float x, float y) {
+*/
+void sb_t::render_at_inches(string text, float x, float y) {
     vector<string> ws = split_words(text);
     vector<string> ps = phoneticize_words(ws);
 
@@ -147,14 +217,14 @@ void render_at_inches(string text, float x, float y) {
     render_phonetic_words(ps);
 }
 
-void mark_page_number() {
+void sb_t::mark_page_number() {
     string text = to_string(page_number);
     float x = even(page_number) ? MARGIN/2 : PAPER_WIDTH - MARGIN/2;
     float y = MARGIN/2;
     render_at_inches(text, x, y);
 }
 
-void new_page() {
+void sb_t::new_page() {
     page_number += 1;
 
     if (page_number > 1) {
@@ -167,13 +237,13 @@ void new_page() {
     cur_col = 0;
 }
 
-void render_row_separator(int row) {
+void sb_t::render_row_separator(int row) {
     cairo_save(cr);
-    cairo_set_line_width(cr, LINE_WIDTH/2);
+    cairo_set_line_width(cr, line_width/2); //TODO don't use scale-based width
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
     //cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
-    float row_height = (PAPER_HEIGHT-MARGIN*2) / ROWS_PER_PAGE;
+    float row_height = (PAPER_HEIGHT-MARGIN*2) / rows_per_page;
     float sepy = MARGIN + row_height * row;
     cairo_move_to(cr, MARGIN,sepy);
     cairo_line_to(cr, PAPER_WIDTH-MARGIN,sepy);
@@ -181,22 +251,22 @@ void render_row_separator(int row) {
     cairo_restore(cr);
 }
 
-void new_row() {
+void sb_t::new_row() {
     cur_row += 1;
     cur_col = 0;
 
-    if (cur_row >= ROWS_PER_PAGE) new_page();
+    if (cur_row >= rows_per_page) new_page();
     else render_row_separator(cur_row);
 
     new_column();
 }
 
-void render_voice_mark(float offset=0.0) {
+void sb_t::render_voice_mark(float offset=0.0) {
     cairo_move_to(cr, markx, riby - voicedlen/2 + offset);
     cairo_line_to(cr, markx, riby + voicedlen/2 + offset);
 }
 
-float size_consonant(char c) {
+float sb_t::size_consonant(char c) {
     float size = 0;
 
     switch (c) {
@@ -252,7 +322,7 @@ float size_consonant(char c) {
     return size;
 }
 
-void render_consonant(char c) {
+void sb_t::render_consonant(char c) {
     switch (c) {
     case 'b':
         render_voice_mark();
@@ -432,12 +502,7 @@ fills_t consonant_fills(char c) {
     }
 }
 
-struct vowel_space_t {
-    float before;
-    float after;
-};
-
-vowel_space_t vowel_space(char c) {
+vowel_space_t sb_t::vowel_space(char c) {
     switch (c) {
     case 'b':
     case 'p':
@@ -487,17 +552,17 @@ vowel_space_t vowel_space(char c) {
     }
 }
 
-float size_vowel_hook() {
+float sb_t::size_vowel_hook() {
     return halfstep;
 }
 
-void render_vowel_hook() {
+void sb_t::render_vowel_hook() {
     cairo_new_sub_path(cr);
     cairo_arc(cr, spinex-halfstep,riby, halfstep, 2*M_PI,M_PI);
     riby += halfstep;
 }
 
-void render_monopthong(char c, float vowelx) {
+void sb_t::render_monopthong(char c, float vowelx) {
     float x = vowelx;
     float y = vowely;
 
@@ -654,7 +719,7 @@ void render_monopthong(char c, float vowelx) {
     }
 }
 
-void render_i_dipthong(char c, float vowelx) {
+void sb_t::render_i_dipthong(char c, float vowelx) {
     float x = vowelx;
     float y = vowely;
 
@@ -708,7 +773,7 @@ void render_i_dipthong(char c, float vowelx) {
     }
 }
 
-void render_u_dipthong(char c, float vowelx) {
+void sb_t::render_u_dipthong(char c, float vowelx) {
     float x = vowelx;
     float y = vowely;
 
@@ -802,7 +867,7 @@ bool logogram(char c) {
     }
 }
 
-float size_logogram_word(string w) {
+float sb_t::size_logogram_word(string w) {
     float size = nan();
 
     if (w == "&") size = step*2;
@@ -811,7 +876,7 @@ float size_logogram_word(string w) {
     return size;
 }
 
-void render_logogram_word(string w) {
+void sb_t::render_logogram_word(string w) {
     if (w == "&") {
         cairo_new_sub_path(cr);
         cairo_arc_negative(cr, spinex-halfstep,riby, halfstep, M_PI,2*M_PI);
@@ -835,7 +900,7 @@ void render_logogram_word(string w) {
     cairo_stroke(cr);
 }
 
-float size_vowel_word(string w) {
+float sb_t::size_vowel_word(string w) {
     float size = nan();
 
     if (w == "A") size = halfstep;
@@ -847,8 +912,7 @@ float size_vowel_word(string w) {
     return size;
 }
 
-void render_vowel(string v, float vowelx);
-void render_vowel_word(string w) {
+void sb_t::render_vowel_word(string w) {
     if (w == "A") {
         cairo_new_sub_path(cr);
         cairo_arc(cr, spinex,riby, halfstep, 2*M_PI,M_PI);
@@ -884,7 +948,7 @@ void render_vowel_word(string w) {
     cairo_stroke(cr);
 }
 
-float size_digit(char c) {
+float sb_t::size_digit(char c) {
     float size = nan();
 
     switch (c) {
@@ -911,7 +975,7 @@ float size_digit(char c) {
     return size;
 }
 
-void render_digit(char c) {
+void sb_t::render_digit(char c) {
     switch (c) {
     case '0':
         cairo_move_to(cr, spinex-halfstep, riby);
@@ -994,7 +1058,7 @@ void render_digit(char c) {
     }
 }
 
-float size_numeral(string w) {
+float sb_t::size_numeral(string w) {
     float size = 0;
 
     for (char c : w) {
@@ -1011,7 +1075,7 @@ float size_numeral(string w) {
     return size;
 }
 
-void render_numeral(string w) {
+void sb_t::render_numeral(string w) {
     for (char c : w) {
         if (isalpha(c)) {
             // assume it's an ordinal
@@ -1026,11 +1090,11 @@ void render_numeral(string w) {
     cairo_stroke(cr);
 }
 
-float size_vowel(string v, float vowelx, float vowely) {
+float sb_t::size_vowel(string v, float vowelx, float vowely) {
     return 0;
 }
 
-void render_vowel(string v, float vowelx) {
+void sb_t::render_vowel(string v, float vowelx) {
     cairo_path_t * saved_path = cairo_copy_path(cr);
     cairo_new_path(cr);
 
@@ -1043,7 +1107,7 @@ void render_vowel(string v, float vowelx) {
     cairo_path_destroy(saved_path);
 }
 
-void render_vowel_at(string v, float x, float y) {
+void sb_t::render_vowel_at(string v, float x, float y) {
     vowely = y;
     render_vowel(v, x);
 }
@@ -1066,7 +1130,7 @@ vector<string> split_vowels(string text) {
     return vs;
 }
 
-float size_punct(string w) {
+float sb_t::size_punct(string w) {
     float size = nan();
 
     if (w == "-") size = 0;
@@ -1084,7 +1148,7 @@ float size_punct(string w) {
     return size;
 }
 
-void render_punct(string w) {
+void sb_t::render_punct(string w) {
     cairo_path_t * saved_path = cairo_copy_path(cr);
     cairo_new_path(cr);
 
@@ -1187,19 +1251,19 @@ bool isprosody(char c) {
     }
 }
 
-float size_column_divider() {
+float sb_t::size_column_divider() {
     // size is undefined and should never be used
     return nan();
 }
 
-void render_column_divider() {
-    float col_top = (cur_row == 0 ? MARGIN : MARGIN/2) + cur_row * PAPER_HEIGHT/ROWS_PER_PAGE;
-    float col_bot = col_top + COLUMN_HEIGHT;
+void sb_t::render_column_divider() {
+    float col_top = (cur_row == 0 ? MARGIN : MARGIN/2) + cur_row * PAPER_HEIGHT/rows_per_page;
+    float col_bot = col_top + column_height;
 
-    float frac = COLUMN_HEIGHT / 3;
+    float frac = column_height / 3;
 
     cairo_save(cr);
-    cairo_set_line_width(cr, LINE_WIDTH/2);
+    cairo_set_line_width(cr, line_width/2);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
     cairo_move_to(cr, spinex, col_top+frac);
@@ -1208,11 +1272,9 @@ void render_column_divider() {
     cairo_restore(cr);
 }
 
-bool emphasis = false;
-
 const string STARS = "*****";
 
-float size_phonetic_word(string w) {
+float sb_t::size_phonetic_word(string w) {
     float temp_riby = starty;
 
     if (w == STARS) {
@@ -1328,7 +1390,7 @@ float size_phonetic_word(string w) {
     return temp_riby - starty;
 }
 
-void render_phonetic_word(string w) {
+void sb_t::render_phonetic_word(string w) {
     riby = starty;
 
     if (w == STARS) {
@@ -1457,7 +1519,7 @@ void render_phonetic_word(string w) {
     cairo_stroke(cr);
 }
 
-void render_phonetic_words(vector<string> & ws) {
+void sb_t::render_phonetic_words(vector<string> & ws) {
     for (auto w : ws) {
         if (w == "/") {
             emphasis = ! emphasis;
@@ -1584,13 +1646,13 @@ vector<string> split_words(string text) {
     return ws;
 }
 
-void render_column(vector<string> & ps) {
+void sb_t::render_column(vector<string> & ps) {
     new_column();
     if (spinex > PAPER_WIDTH-MARGIN-step-halfstep) new_row();
     render_phonetic_words(ps);
 }
 
-void render_columns(string text) {
+void sb_t::render_columns(string text) {
     vector<string> ws = split_words(text);
     vector<string> ps = phoneticize_words(ws);
 
@@ -1605,7 +1667,7 @@ void render_columns(string text) {
             col_size = 0;
             render_phonetic_word(w);
         }
-        else if (col_size + word_size <= COLUMN_HEIGHT) {
+        else if (col_size + word_size <= column_height) {
             //cout << w << " : " << word_size << endl;
             col_ps.push_back(w);
             col_size += word_size + wordstep;
@@ -1636,7 +1698,16 @@ void render_columns(string text) {
     if (! col_ps.empty()) render_column(col_ps);
 }
 
-void draw_skull_bat(float width, float x, float y) {
+struct keypage_context_t : skullbat_context_t {
+    void draw_skull_bat(float width, float x, float y);
+    void render_latin(string text, float x, float y);
+    void render_skullbat(string text, float x, float y);
+    void render_key_page();
+};
+
+using kp_t = keypage_context_t;
+
+void kp_t::draw_skull_bat(float width, float x, float y) {
     cairo_surface_t * skullbat =
         cairo_image_surface_create_from_png("skullbat.png");
     cairo_save(cr);
@@ -1650,7 +1721,7 @@ void draw_skull_bat(float width, float x, float y) {
 
 }
 
-void render_latin(string text, float x, float y) {
+void kp_t::render_latin(string text, float x, float y) {
     cairo_move_to(cr, x, y);
     cairo_show_text(cr, text.c_str());
 
@@ -1658,7 +1729,7 @@ void render_latin(string text, float x, float y) {
     cairo_fill(cr);
 }
 
-void render_skullbat(string text, float x, float y) {
+void kp_t::render_skullbat(string text, float x, float y) {
     // column is undefined in this context
     cur_col = numeric_limits<int>::min();
     col_bot = numeric_limits<float>::max();
@@ -1674,7 +1745,7 @@ void render_skullbat(string text, float x, float y) {
     render_phonetic_word(text);
 }
 
-void render_key_page() {
+void kp_t::render_key_page() {
     draw_skull_bat(1, PAPER_WIDTH/2-0.5, MARGIN - 3.0/4.0 /2);
 
     set_scale(1.5);
@@ -1886,15 +1957,36 @@ int main(int nargs, char * args[])
         "abjad.pdf",
         PAPER_WIDTH * POINTS_PER_INCH,
         PAPER_HEIGHT * POINTS_PER_INCH);
+
+    skullbat_context_t sb;
+
+    /*
     cr = cairo_create(csurf);
     cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
-    cairo_set_line_width(cr, LINE_WIDTH);
+    cairo_set_line_width(cr, line_width);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
     cairo_set_source_rgb(cr, 0,0,0);
+    */
 
     vector<string> lines = load_text(args[1]);
+
+    /*
+    // Goblin Market driver
+    new_page();
+    set_row_count(2);
+    for (string line : lines) {
+        if (line.empty()) new_column();
+        else {
+            auto ws = split_words(line);
+            auto ps = phoneticize_words(ws);
+            render_column(ps);
+        }
+    }
+    */
+
+    // Pride and Prejudice driver
     vector<string> paras;
     string para;
     for (string line : lines) {
@@ -1906,32 +1998,32 @@ int main(int nargs, char * args[])
     }
     paras.push_back(para);
 
-    new_page();
-    set_scale(7);
-    set_row_count(1);
+    sb.new_page();
+    sb.set_scale(7);
+    sb.set_row_count(1);
     for (string para : paras) {
         if (para.substr(0,7) == "Chapter") {
-            set_scale(1);
-            set_row_count(2);
-            new_page();
+            sb.set_scale(1);
+            sb.set_row_count(2);
+            sb.new_page();
 
             // chapter heading
-            set_scale(2);
-            render_at_inches(para, MARGIN+step, MARGIN);
-            set_scale(1);
+            sb.set_scale(2);
+            sb.render_at_inches(para, MARGIN+sb.step, MARGIN);
+            sb.set_scale(1);
 
-            cur_col = 1; //TODO new_column should take a column argument
-            new_column();
+            sb.new_column(2);
         }
-        else render_columns(para);
+        else sb.render_columns(para);
     }
 
-    new_page();
+    sb.new_page();
 
-    render_key_page();
+    keypage_context_t kp;
+    kp.render_key_page();
+
     cairo_surface_show_page(csurf);
 
-    cairo_destroy(cr);
     cairo_surface_finish(csurf);
     cairo_surface_destroy(csurf);
     return 0;
