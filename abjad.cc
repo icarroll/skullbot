@@ -37,11 +37,17 @@ struct document_t {
 
     const float MARGIN = 1.0;
 
+    skullbat_context_t * pn;
+    int page_number = 0;
+
     vector<skullbat_context_t *> contexts;
 
     document_t(string filename);
 
     void subscribe(skullbat_context_t * sb);
+
+    void new_page();
+
     void unsubscribe(skullbat_context_t * sb);
     void save_and_close();
 
@@ -81,8 +87,6 @@ struct skullbat_context_t {
 
     float vowel_size;
 
-    int page_number = 0;
-
     int cur_col = 0;
     int cur_row = 0;
 
@@ -100,7 +104,7 @@ struct skullbat_context_t {
 
     skullbat_context_t(document_t & newdoc, float newscale=1.0, int newrows=2)
             : document(newdoc) {
-        //document.subscribe(this);
+        document.subscribe(this);
 
         cr = cairo_create(document.csurf);
         cairo_scale(cr, document.POINTS_PER_INCH, document.POINTS_PER_INCH);
@@ -113,19 +117,17 @@ struct skullbat_context_t {
         set_row_count(newrows);
     }
 
-    /*
     close() {
         document.unsubscribe(this);
         cairo_destroy(cr);
     }
-    */
 
     void set_scale(float newscale);
     void set_row_count(int n);
     void new_column(int newcol);
     void render_at_inches(string text, float x, float y);
     void mark_page_number();
-    void new_page();
+    void handle_new_page();
     void render_row_separator(int row);
     void new_row();
     void render_voice_mark(float offset);
@@ -166,6 +168,8 @@ document_t::document_t(string filename) {
         filename.c_str(),
         PAPER_WIDTH * POINTS_PER_INCH,
         PAPER_HEIGHT * POINTS_PER_INCH);
+
+    pn = new skullbat_context_t(* this);
 }
 
 void document_t::subscribe(skullbat_context_t * sb) {
@@ -258,27 +262,31 @@ void sb_t::render_at_inches(string text, float x, float y) {
 }
 
 void sb_t::mark_page_number() {
-    string text = to_string(page_number);
-    float x = even(page_number) ? document.MARGIN/2 : document.PAPER_WIDTH - document.MARGIN/2;
+    string text = to_string(document.page_number);
+    float x = even(document.page_number) ? document.MARGIN/2 : document.PAPER_WIDTH - document.MARGIN/2;
     float y = document.MARGIN/2;
     render_at_inches(text, x, y);
 }
 
-//TODO move into document struct
-void sb_t::new_page() {
+void document_t::new_page() {
     page_number += 1;
 
     if (page_number > 1) {
-        cairo_surface_show_page(document.csurf);
+        cairo_surface_show_page(csurf);
     }
 
-    mark_page_number();
+    pn->mark_page_number();
 
+    for (skullbat_context_t * context : contexts) {
+        context->handle_new_page();
+    }
+}
+
+void sb_t::handle_new_page() {
     cur_row = 0;
     cur_col = 0;
 }
 
-//TODO move into page struct?
 void sb_t::render_row_separator(int row) {
     cairo_save(cr);
     cairo_set_line_width(cr, line_width/2); //TODO don't use scale-based width
@@ -293,12 +301,11 @@ void sb_t::render_row_separator(int row) {
     cairo_restore(cr);
 }
 
-//TODO move into page struct?
 void sb_t::new_row() {
     cur_row += 1;
     cur_col = 0;
 
-    if (cur_row >= rows_per_page) new_page();
+    if (cur_row >= rows_per_page) document.new_page();
     else render_row_separator(cur_row);
 
     new_column();
@@ -2032,7 +2039,7 @@ int main(int nargs, char * args[])
     document_t doc("abjad.pdf");
     skullbat_context_t sb(doc);
 
-    sb.new_page();
+    doc.new_page();
     //TODO use a separate skullbat context here
     sb.set_scale(7);
     sb.set_row_count(1);
@@ -2040,7 +2047,7 @@ int main(int nargs, char * args[])
         if (para.substr(0,7) == "Chapter") {
             sb.set_scale(1);
             sb.set_row_count(2);
-            sb.new_page();
+            doc.new_page();
 
             // chapter heading
             sb.set_scale(2);
@@ -2053,7 +2060,7 @@ int main(int nargs, char * args[])
         else sb.render_columns(para);
     }
 
-    sb.new_page();
+    doc.new_page();
 
     keypage_context_t kp(doc);
     kp.render_key_page();
