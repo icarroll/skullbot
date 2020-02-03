@@ -47,6 +47,7 @@ struct document_t {
     void subscribe(skullbat_context_t * sb);
 
     void new_page();
+    void mark_page_number();
 
     void unsubscribe(skullbat_context_t * sb);
     void save_and_close();
@@ -59,6 +60,8 @@ struct vowel_space_t {
 };
 
 struct skullbat_context_t {
+    const float ROW_SEP_LINE_WIDTH = 0.01/2;
+
     document_t & document;
     cairo_t * cr;
 
@@ -126,7 +129,6 @@ struct skullbat_context_t {
     void set_row_count(int n);
     void new_column(int newcol);
     void render_at_inches(string text, float x, float y);
-    void mark_page_number();
     void handle_new_page();
     void render_row_separator(int row);
     void new_row();
@@ -161,8 +163,6 @@ struct skullbat_context_t {
     void render_columns(string text);
 };
 
-using sb_t = skullbat_context_t;
-
 document_t::document_t(string filename) {
     csurf = cairo_pdf_surface_create(
         filename.c_str(),
@@ -170,6 +170,31 @@ document_t::document_t(string filename) {
         PAPER_HEIGHT * POINTS_PER_INCH);
 
     pn = new skullbat_context_t(* this);
+}
+
+void document_t::new_page() {
+    page_number += 1;
+
+    if (page_number > 1) {
+        cairo_surface_show_page(csurf);
+    }
+
+    for (skullbat_context_t * context : contexts) {
+        context->handle_new_page();
+    }
+
+    mark_page_number();
+}
+
+bool even(int n) {
+    return n % 2 == 0;
+}
+
+void document_t::mark_page_number() {
+    string text = to_string(page_number);
+    float x = even(page_number) ? MARGIN/2 : PAPER_WIDTH - MARGIN/2;
+    float y = MARGIN/2;
+    pn->render_at_inches(text, x, y);
 }
 
 void document_t::subscribe(skullbat_context_t * sb) {
@@ -190,6 +215,8 @@ void document_t::save_and_close() {
     cairo_surface_finish(csurf);
     cairo_surface_destroy(csurf);
 }
+
+using sb_t = skullbat_context_t;
 
 void sb_t::set_scale(float newscale) {
     scale = newscale;
@@ -236,10 +263,6 @@ void sb_t::new_column(int newcol=-1) {
     col_bot = starty + column_height;
 }
 
-bool even(int n) {
-    return n % 2 == 0;
-}
-
 vector<string> split_words(string text);
 vector<string> phoneticize_words(vector<string> ws);
 void sb_t::render_at_inches(string text, float x, float y) {
@@ -261,27 +284,6 @@ void sb_t::render_at_inches(string text, float x, float y) {
     render_phonetic_words(ps);
 }
 
-void sb_t::mark_page_number() {
-    string text = to_string(document.page_number);
-    float x = even(document.page_number) ? document.MARGIN/2 : document.PAPER_WIDTH - document.MARGIN/2;
-    float y = document.MARGIN/2;
-    render_at_inches(text, x, y);
-}
-
-void document_t::new_page() {
-    page_number += 1;
-
-    if (page_number > 1) {
-        cairo_surface_show_page(csurf);
-    }
-
-    pn->mark_page_number();
-
-    for (skullbat_context_t * context : contexts) {
-        context->handle_new_page();
-    }
-}
-
 void sb_t::handle_new_page() {
     cur_row = 0;
     cur_col = 0;
@@ -289,10 +291,9 @@ void sb_t::handle_new_page() {
 
 void sb_t::render_row_separator(int row) {
     cairo_save(cr);
-    cairo_set_line_width(cr, line_width/2); //TODO don't use scale-based width
+    cairo_set_line_width(cr, ROW_SEP_LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
-    //cairo_move_to(cr, MARGIN,PAPER_HEIGHT/2);
     float row_height = (document.PAPER_HEIGHT-document.MARGIN*2) / rows_per_page;
     float sepy = document.MARGIN + row_height * row;
     cairo_move_to(cr, document.MARGIN,sepy);
