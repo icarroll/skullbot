@@ -1188,7 +1188,7 @@ float sb_t::size_punct(string w) {
     else if (w == "--" || w == ";" || w == ":") size = step;
     else if (w == "----") size = wordstep*2;
     else if (w == ",") size = 0;
-    else if (w == ".") size = 0;
+    else if (w == ".") size = halfstep;
     else if (w == "!") size = 0;
     else if (w == "?") size = 0;
     else if (w == "\"") size = ribstep;
@@ -1240,9 +1240,11 @@ void sb_t::render_punct(string w) {
         cairo_stroke(cr);
     }
     else if (w == ".") {
-        cairo_move_to(cr, spinex-step-halfstep, riby);
+        cairo_move_to(cr, spinex-step-halfstep, riby-halfstep);
+        cairo_line_to(cr, spinex-step-halfstep, riby);
         cairo_line_to(cr, spinex, riby);
         cairo_stroke(cr);
+        riby += halfstep;
     }
     else if (w == "!") {
         cairo_move_to(cr, spinex-step-halfstep/2, riby-step);
