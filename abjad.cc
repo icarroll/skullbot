@@ -30,6 +30,7 @@ float nan() {
 const float POINTS_PER_INCH = 72.0;
 
 struct skullbat_context_t;
+struct skullbat_justification_context_t;
 struct document_t {
     cairo_surface_t * csurf;
 
@@ -41,17 +42,17 @@ struct document_t {
     skullbat_context_t * pn;   // for rendering page number
     int page_number = 0;
 
-    vector<skullbat_context_t *> contexts;
+    set<skullbat_justification_context_t *> contexts;
 
     document_t(string filename, float newwidth=5.5, float newheight=8.5,
                float newmargin=1.0);
 
-    void subscribe(skullbat_context_t * sb);
+    void new_page_subscribe(skullbat_justification_context_t * sbj);
+    void new_page_unsubscribe(skullbat_justification_context_t * sbj);
 
     void new_page();
     void mark_page_number();
 
-    void unsubscribe(skullbat_context_t * sb);
     void save_and_close();
 
 };
@@ -96,7 +97,6 @@ struct skullbat_context_t {
 
     skullbat_context_t(document_t & newdoc, float newscale=1.0)
             : document(newdoc) {
-        document.subscribe(this);
 
         cr = cairo_create(document.csurf);
         cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
@@ -108,14 +108,12 @@ struct skullbat_context_t {
         set_scale(newscale);
     }
 
-    close() {
-        document.unsubscribe(this);
+    ~skullbat_context_t() {
         cairo_destroy(cr);
     }
 
     virtual void set_scale(float newscale);
     void render_at_inches(string text, float x, float y);
-    virtual void handle_new_page();
     void render_voice_mark(float offset);
     float size_consonant(char c);
     void render_consonant(char c);
@@ -154,23 +152,30 @@ struct skullbat_justification_context_t : skullbat_context_t {
     float colstep;
     int ncols;
 
-    //TODO origin 0 vs origin 1? currently inconsistent
-    int cur_col = 0;
-    int cur_row = 0;
+    bool need_fresh_column;
+
+    // these are origin 1
+    int cur_col;
+    int cur_row;
 
     skullbat_justification_context_t(document_t & newdoc, float newscale=1.0,
                                      int newrows=2)
             : skullbat_context_t(newdoc, newscale) {
+        newdoc.new_page_subscribe(this);
+
         set_scale(newscale);
         set_row_count(newrows);
+        first_row();
     }
 
     virtual void set_scale(float newscale);
     void set_row_count(int newrows);
-    void new_column(int newcol);
-    virtual void handle_new_page();
+    void set_column(int newcol);
+    void next_column();
     void render_row_separator(int row);
-    void new_row();
+    void first_row();
+    void next_row();
+    void handle_new_page();
     void render_column_divider();
     void render_column(vector<string> & ps);
     void render_columns(string text);
@@ -190,33 +195,26 @@ document_t::document_t(string filename, float newwidth, float newheight,
         paper_height * POINTS_PER_INCH);
 
     pn = new skullbat_context_t(* this);
+
+    new_page();
+}
+
+void document_t::new_page_subscribe(sbj_t * sbj) {
+    contexts.insert(sbj);
+}
+
+void document_t::new_page_unsubscribe(sbj_t * sbj) {
+    contexts.erase(sbj);
 }
 
 void document_t::new_page() {
     page_number += 1;
 
-    if (page_number > 1) {
-        cairo_surface_show_page(csurf);
-    }
-
-    for (skullbat_context_t * context : contexts) {
-        context->handle_new_page();
-    }
+    if (page_number > 1) cairo_surface_show_page(csurf);
 
     mark_page_number();
 
-    /*
-    cairo_t * cr = cairo_create(csurf);
-    cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
-    cairo_move_to(cr, margin, 0);
-    cairo_line_to(cr, margin, paper_height);
-    cairo_move_to(cr, paper_width-margin, 0);
-    cairo_line_to(cr, paper_width-margin, paper_height);
-    cairo_set_source_rgb(cr, 1,0,0);
-    cairo_set_line_width(cr, 0.01);
-    cairo_stroke(cr);
-    cairo_destroy(cr);
-    */
+    for (sbj_t * sbj : contexts) sbj->handle_new_page();
 }
 
 bool even(int n) {
@@ -228,18 +226,6 @@ void document_t::mark_page_number() {
     float x = even(page_number) ? margin/2 : paper_width - margin/2;
     float y = margin/2;
     pn->render_at_inches(text, x, y);
-}
-
-void document_t::subscribe(skullbat_context_t * sb) {
-    contexts.push_back(sb);
-}
-
-void document_t::unsubscribe(skullbat_context_t * sb) {
-    auto it = begin(contexts);
-    while (it != end(contexts)) {
-        if (* it == sb) contexts.erase(it);
-        else ++it;
-    }
 }
 
 void document_t::save_and_close() {
@@ -287,26 +273,23 @@ void sbj_t::set_row_count(int newrows) {
     column_height = inner_row_height - document.margin;
 }
 
-//TODO fix newcol handling
-void sbj_t::new_column(int newcol=-1) {
-    if (newcol != -1) cur_col = newcol;
+void sbj_t::set_column(int newcol) {
+    cur_col = newcol;
 
-    spinex = document.margin + word_width/2 + cur_col*colstep;
-    if (newcol == -1) cur_col += 1;
+    spinex = document.margin + word_width/2 + (cur_col-1)*colstep;
     leftx = spinex - step;
     rightx = spinex + step;
     markx = rightx + halfstep;
 
-    starty = document.margin + inner_row_height * cur_row;
+    starty = document.margin + inner_row_height * (cur_row-1);
     riby = starty;
+
+    need_fresh_column = false;
 }
 
-void sb_t::handle_new_page() {
-}
-
-void sbj_t::handle_new_page() {
-    cur_row = 0;
-    cur_col = 0;
+void sbj_t::next_column() {
+    if (cur_col + 1 > ncols) next_row();
+    else set_column(cur_col + 1);
 }
 
 void sbj_t::render_row_separator(int row) {
@@ -314,21 +297,33 @@ void sbj_t::render_row_separator(int row) {
     cairo_set_line_width(cr, SEP_LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
-    float sepy = document.margin/2 + inner_row_height * row;
+    float sepy = document.margin/2 + inner_row_height * (row-1);
     cairo_move_to(cr, document.margin,sepy);
     cairo_line_to(cr, document.paper_width-document.margin,sepy);
     cairo_stroke(cr);
     cairo_restore(cr);
 }
 
-void sbj_t::new_row() {
+void sbj_t::first_row() {
+    cur_row = 1;
+    set_column(1);
+}
+
+void sbj_t::next_row() {
     cur_row += 1;
-    cur_col = 0;
 
-    if (cur_row >= rows_per_page) document.new_page();
-    else render_row_separator(cur_row);
+    if (cur_row > rows_per_page) {
+        document.new_page();
+        first_row();
+    }
+    else {
+        render_row_separator(cur_row);
+        set_column(1);
+    }
+}
 
-    new_column();
+void sbj_t::handle_new_page() {
+    first_row();
 }
 
 void sb_t::render_voice_mark(float offset=0.0) {
@@ -1306,7 +1301,9 @@ bool isprosody(char c) {
 }
 
 void sbj_t::render_column_divider() {
-    float col_top = document.margin + inner_row_height * cur_row;
+    next_column();
+
+    float col_top = document.margin + inner_row_height * (cur_row-1);
     float col_bot = col_top + column_height;
 
     float frac = column_height / 3;
@@ -1319,6 +1316,8 @@ void sbj_t::render_column_divider() {
     cairo_line_to(cr, spinex, col_bot-frac);
     cairo_stroke(cr);
     cairo_restore(cr);
+
+    need_fresh_column = true;
 }
 
 float sb_t::size_phonetic_word(string w) {
@@ -1563,10 +1562,7 @@ void sb_t::render_phonetic_words(vector<string> & ws) {
 
 map<string, string> pronunciation;
 
-const string STARS = "*****";
-
 string phoneticize_word(string raw_w) {
-    if (raw_w == STARS) return raw_w;
     if (isdigit(raw_w[0])) return raw_w;
     if (isprosody(raw_w[0])) return raw_w;
     if (raw_w[0] == '\'') raw_w = raw_w.substr(1);
@@ -1597,16 +1593,8 @@ vector<string> split_words(string text) {
     string w;
 
     for (char c : text) {
-        // this whole * thing is an ugly hack
-        if (c == '*') {
-            w.push_back(c);
-
-            continue;
-        }
-
         if (isspace(c)) {
-            if (w.back() == '*') continue;
-            else if (! w.empty()) {
+            if (! w.empty()) {
                 ws.push_back(w);
                 w.clear();
             }
@@ -1693,47 +1681,39 @@ void sb_t::render_at_inches(string text, float x, float y) {
     render_phonetic_words(ps);
 }
 
-void sbj_t::render_column(vector<string> & ps) {
-    new_column();
-    if (cur_col > ncols) new_row();
-    render_phonetic_words(ps);
-}
-
 void sbj_t::render_columns(string text) {
     vector<string> ws = split_words(text);
     vector<string> ps = phoneticize_words(ws);
 
-    vector<string> col_ps;
+    vector<string> col;
     float col_size = 0;
-    for (auto it=ps.begin() ; it!=ps.end() ; ++it) {
-        auto p = * it;
-        if (p == STARS) {
-            render_column(col_ps);
-            col_ps.clear();
-            col_size = 0;
-
-            render_column_divider();
-            continue;
-        }
+    for (string p : ps) {
+        if (need_fresh_column) next_column();
 
         float word_size = size_phonetic_word(p);
         if (col_size + word_size <= column_height) {
-            col_ps.push_back(p);
+            col.push_back(p);
             col_size += word_size + wordstep;
         }
         else {
-            render_column(col_ps);
-            col_ps.clear();
+            render_phonetic_words(col);
+            col.clear();
             col_size = 0;
 
-            col_ps.push_back(p);
+            col.push_back(p);
             col_size += word_size + wordstep;
+
+            need_fresh_column = true;
         }
     }
 
-    if (! col_ps.empty()) render_column(col_ps);
+    if (! col.empty()) {
+        render_phonetic_words(col);
+        need_fresh_column = true;
+    }
 }
 
+//TODO change this from struct to bare functions
 struct keypage_context_t : skullbat_context_t {
     const float FONT_SIZE = 12.0;
 
@@ -1984,6 +1964,8 @@ vector<string> load_text(string filename) {
     return lines;
 }
 
+const string STARS = "* * * * *";
+
 int main(int nargs, char * args[])
 {
     if (nargs != 2) die("filename");
@@ -2029,14 +2011,14 @@ int main(int nargs, char * args[])
     skullbat_justification_context_t chap(doc, 2);
     skullbat_justification_context_t text(doc);
 
-    doc.new_page();
     for (string para : title_paras) title.render_columns(para);
 
     for (string para : rest_paras) {
-        if (para.substr(0,7) == "Chapter") {
+        if (para.find(STARS) != string::npos) text.render_column_divider();
+        else if (para.substr(0,7) == "Chapter") {
             doc.new_page();
             chap.render_columns(para);
-            text.new_column(2);
+            text.set_column(3);
         }
         else text.render_columns(para);
     }
