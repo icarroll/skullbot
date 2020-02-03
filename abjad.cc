@@ -23,6 +23,7 @@ void die(string message) {
 }
 
 float nan() {
+    //TODO this is never checked for, retain?
     return numeric_limits<float>::signaling_NaN();
 }
 
@@ -60,17 +61,12 @@ struct vowel_space_t {
 };
 
 struct skullbat_context_t {
-    const float ROW_SEP_LINE_WIDTH = 0.01/2;
-
     document_t & document;
     cairo_t * cr;
 
     float scale;
 
     float line_width;
-
-    float rows_per_page;
-    float column_height;
 
     float unit;
 
@@ -80,7 +76,6 @@ struct skullbat_context_t {
     float ribstep;
     float vowelstep;
     float wordstep;
-    float colstep;
 
     float elstep;
 
@@ -90,9 +85,6 @@ struct skullbat_context_t {
 
     float vowel_size;
 
-    int cur_col = 0;
-    int cur_row = 0;
-
     float leftx;
     float spinex;
     float rightx;
@@ -101,11 +93,10 @@ struct skullbat_context_t {
     float starty;
     float riby;
     float vowely;
-    float col_bot;
 
     bool emphasis = false;
 
-    skullbat_context_t(document_t & newdoc, float newscale=1.0, int newrows=2)
+    skullbat_context_t(document_t & newdoc, float newscale=1.0)
             : document(newdoc) {
         document.subscribe(this);
 
@@ -117,7 +108,6 @@ struct skullbat_context_t {
         cairo_set_source_rgb(cr, 0,0,0);
 
         set_scale(newscale);
-        set_row_count(newrows);
     }
 
     close() {
@@ -125,13 +115,9 @@ struct skullbat_context_t {
         cairo_destroy(cr);
     }
 
-    void set_scale(float newscale);
-    void set_row_count(int n);
-    void new_column(int newcol);
+    virtual void set_scale(float newscale);
     void render_at_inches(string text, float x, float y);
-    void handle_new_page();
-    void render_row_separator(int row);
-    void new_row();
+    virtual void handle_new_page();
     void render_voice_mark(float offset);
     float size_consonant(char c);
     void render_consonant(char c);
@@ -154,14 +140,44 @@ struct skullbat_context_t {
     void render_vowel_at(string v, float x, float y);
     float size_punct(string w);
     void render_punct(string w);
-    float size_column_divider();
-    void render_column_divider();
     float size_phonetic_word(string w);
     void render_phonetic_word(string w);
     void render_phonetic_words(vector<string> & ws);
+};
+
+using sb_t = skullbat_context_t;
+
+struct skullbat_justification_context_t : skullbat_context_t {
+    const float ROW_SEP_LINE_WIDTH = 0.01/2;
+
+    float rows_per_page;
+    float column_height;
+
+    float colstep;
+
+    int cur_col = 0;
+    int cur_row = 0;
+
+    float col_bot;
+
+    skullbat_justification_context_t(document_t & newdoc, float newscale=1.0,
+                                     int newrows=2)
+            : skullbat_context_t(newdoc, newscale) {
+        set_row_count(newrows);
+    }
+
+    virtual void set_scale(float newscale);
+    void set_row_count(int n);
+    void new_column(int newcol);
+    void handle_new_page();
+    void render_row_separator(int row);
+    void new_row();
+    void render_column_divider();
     void render_column(vector<string> & ps);
     void render_columns(string text);
 };
+
+using sbj_t = skullbat_justification_context_t;
 
 document_t::document_t(string filename) {
     csurf = cairo_pdf_surface_create(
@@ -216,8 +232,6 @@ void document_t::save_and_close() {
     cairo_surface_destroy(csurf);
 }
 
-using sb_t = skullbat_context_t;
-
 void sb_t::set_scale(float newscale) {
     scale = newscale;
 
@@ -232,7 +246,6 @@ void sb_t::set_scale(float newscale) {
     ribstep = 2*step/3;
     vowelstep = ribstep;
     wordstep = step;
-    colstep = 2*unit/2;
 
     elstep = step * sqrt(2)/2;
 
@@ -243,12 +256,18 @@ void sb_t::set_scale(float newscale) {
     vowel_size = halfstep + 2*dotrad;
 }
 
-void sb_t::set_row_count(int n) {
+void sbj_t::set_scale(float newscale) {
+    sb_t::set_scale(newscale);
+
+    colstep = 2*unit/2;
+}
+
+void sbj_t::set_row_count(int n) {
     rows_per_page = n;
     column_height = (document.PAPER_HEIGHT - document.MARGIN) / rows_per_page - document.MARGIN;
 }
 
-void sb_t::new_column(int newcol=-1) {
+void sbj_t::new_column(int newcol=-1) {
     if (newcol != -1) cur_col = newcol;
 
     spinex = document.MARGIN + step + cur_col*colstep;
@@ -269,10 +288,6 @@ void sb_t::render_at_inches(string text, float x, float y) {
     vector<string> ws = split_words(text);
     vector<string> ps = phoneticize_words(ws);
 
-    // column is undefined in this context
-    cur_col = numeric_limits<int>::min();
-    col_bot = numeric_limits<float>::max();
-
     spinex = x;
     leftx = spinex - step;
     rightx = spinex + step;
@@ -285,11 +300,14 @@ void sb_t::render_at_inches(string text, float x, float y) {
 }
 
 void sb_t::handle_new_page() {
+}
+
+void sbj_t::handle_new_page() {
     cur_row = 0;
     cur_col = 0;
 }
 
-void sb_t::render_row_separator(int row) {
+void sbj_t::render_row_separator(int row) {
     cairo_save(cr);
     cairo_set_line_width(cr, ROW_SEP_LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
@@ -302,7 +320,7 @@ void sb_t::render_row_separator(int row) {
     cairo_restore(cr);
 }
 
-void sb_t::new_row() {
+void sbj_t::new_row() {
     cur_row += 1;
     cur_col = 0;
 
@@ -1304,12 +1322,7 @@ bool isprosody(char c) {
     }
 }
 
-float sb_t::size_column_divider() {
-    // size is undefined and should never be used
-    return nan();
-}
-
-void sb_t::render_column_divider() {
+void sbj_t::render_column_divider() {
     float col_top = (cur_row == 0 ? document.MARGIN : document.MARGIN/2) + cur_row * document.PAPER_HEIGHT/rows_per_page;
     float col_bot = col_top + column_height;
 
@@ -1325,14 +1338,8 @@ void sb_t::render_column_divider() {
     cairo_restore(cr);
 }
 
-const string STARS = "*****";
-
 float sb_t::size_phonetic_word(string w) {
     float temp_riby = starty;
-
-    if (w == STARS) {
-        return size_column_divider();
-    }
 
     if (logogram(w[0])) {
         return size_logogram_word(w);
@@ -1445,11 +1452,6 @@ float sb_t::size_phonetic_word(string w) {
 
 void sb_t::render_phonetic_word(string w) {
     riby = starty;
-
-    if (w == STARS) {
-        render_column_divider();
-        return;
-    }
 
     if (logogram(w[0])) {
         render_logogram_word(w);
@@ -1586,6 +1588,8 @@ void sb_t::render_phonetic_words(vector<string> & ws) {
 
 map<string, string> pronunciation;
 
+const string STARS = "*****";
+
 string phoneticize_word(string raw_w) {
     if (raw_w == STARS) return raw_w;
     if (isdigit(raw_w[0])) return raw_w;
@@ -1699,13 +1703,13 @@ vector<string> split_words(string text) {
     return ws;
 }
 
-void sb_t::render_column(vector<string> & ps) {
+void sbj_t::render_column(vector<string> & ps) {
     new_column();
     if (spinex > document.PAPER_WIDTH-document.MARGIN-step-halfstep) new_row();
     render_phonetic_words(ps);
 }
 
-void sb_t::render_columns(string text) {
+void sbj_t::render_columns(string text) {
     vector<string> ws = split_words(text);
     vector<string> ps = phoneticize_words(ws);
 
@@ -1713,32 +1717,21 @@ void sb_t::render_columns(string text) {
     float col_size = 0;
     for (auto it=ps.begin() ; it!=ps.end() ; ++it) {
         auto w = * it;
-        float word_size = size_phonetic_word(w);
-        if (isnan(word_size)) {
+        if (w == STARS) {
             render_column(col_ps);
             col_ps.clear();
             col_size = 0;
-            render_phonetic_word(w);
+
+            render_column_divider();
+            continue;
         }
-        else if (col_size + word_size <= column_height) {
-            //cout << w << " : " << word_size << endl;
+
+        float word_size = size_phonetic_word(w);
+        if (col_size + word_size <= column_height) {
             col_ps.push_back(w);
             col_size += word_size + wordstep;
         }
         else {
-            /*
-            it += 1;
-            while ((it != ps.end()) && isprosody((* it)[0])) {
-                if (* it == STARS) break;
-                if (* it == "(") break;
-                if (* it == "/") break;
-                word_size = size_phonetic_word(* it);
-                cout << * it << " : " << word_size << endl;
-                col_ps.push_back(* it);
-                col_size += word_size + wordstep;
-                it += 1;
-            }
-            */
             render_column(col_ps);
             col_ps.clear();
             col_size = 0;
@@ -1759,8 +1752,8 @@ struct keypage_context_t : skullbat_context_t {
     void render_skullbat(string text, float x, float y);
     void render_key_page();
 
-    keypage_context_t(document_t & newdoc, float newscale=1.0, int newrows=2)
-            : skullbat_context_t(newdoc, newscale, newrows) {
+    keypage_context_t(document_t & newdoc, float newscale=1.0)
+            : skullbat_context_t(newdoc, newscale) {
     }
 };
 
@@ -1788,10 +1781,6 @@ void kp_t::render_latin(string text, float x, float y) {
 }
 
 void kp_t::render_skullbat(string text, float x, float y) {
-    // column is undefined in this context
-    cur_col = numeric_limits<int>::min();
-    col_bot = numeric_limits<float>::max();
-
     spinex = x;
     leftx = spinex - step;
     rightx = spinex + step;
@@ -2040,27 +2029,27 @@ int main(int nargs, char * args[])
     paras.push_back(para);
 
     document_t doc("abjad.pdf");
-    skullbat_context_t sb(doc);
+    skullbat_justification_context_t sbj(doc);
 
     doc.new_page();
     //TODO use a separate skullbat context here
-    sb.set_scale(7);
-    sb.set_row_count(1);
+    sbj.set_scale(7);
+    sbj.set_row_count(1);
     for (string para : paras) {
         if (para.substr(0,7) == "Chapter") {
-            sb.set_scale(1);
-            sb.set_row_count(2);
+            sbj.set_scale(1);
+            sbj.set_row_count(2);
             doc.new_page();
 
             // chapter heading
-            sb.set_scale(2);
+            sbj.set_scale(2);
             //TODO use a separate skullbat context here
-            sb.render_at_inches(para, doc.MARGIN+sb.step, doc.MARGIN);
-            sb.set_scale(1);
+            sbj.render_at_inches(para, doc.MARGIN+sbj.step, doc.MARGIN);
+            sbj.set_scale(1);
 
-            sb.new_column(2);
+            sbj.new_column(2);
         }
-        else sb.render_columns(para);
+        else sbj.render_columns(para);
     }
 
     doc.new_page();
