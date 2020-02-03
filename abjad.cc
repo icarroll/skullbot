@@ -67,8 +67,6 @@ struct skullbat_context_t {
 
     float scale;
 
-    float line_width;
-
     float unit;
     float word_width;
 
@@ -146,14 +144,17 @@ struct skullbat_context_t {
 using sb_t = skullbat_context_t;
 
 struct skullbat_justification_context_t : skullbat_context_t {
-    const float ROW_SEP_LINE_WIDTH = 0.01/2;
+    const float SEP_LINE_WIDTH = 0.01/2;
+    const float COLUMN_SPACING = 1.25;
 
     float rows_per_page;
+    float inner_row_height;
     float column_height;
 
     float colstep;
     int ncols;
 
+    //TODO origin 0 vs origin 1? currently inconsistent
     int cur_col = 0;
     int cur_row = 0;
 
@@ -164,7 +165,7 @@ struct skullbat_justification_context_t : skullbat_context_t {
     }
 
     virtual void set_scale(float newscale);
-    void set_row_count(int n);
+    void set_row_count(int newrows);
     void new_column(int newcol);
     virtual void handle_new_page();
     void render_row_separator(int row);
@@ -250,8 +251,7 @@ void document_t::save_and_close() {
 void sb_t::set_scale(float newscale) {
     scale = newscale;
 
-    line_width = scale*0.01;
-    cairo_set_line_width(cr, line_width/2);
+    cairo_set_line_width(cr, scale*0.01/2);
 
     unit = scale/5.0;
     word_width = unit;
@@ -276,13 +276,14 @@ void sbj_t::set_scale(float newscale) {
 
     float row_width = document.paper_width - document.margin*2;
 
-    ncols = row_width / word_width;
+    ncols = row_width / (word_width * COLUMN_SPACING);
     colstep = row_width / ncols;
 }
 
-void sbj_t::set_row_count(int n) {
-    rows_per_page = n;
-    column_height = (document.paper_height - document.margin) / rows_per_page - document.margin;
+void sbj_t::set_row_count(int newrows) {
+    rows_per_page = newrows;
+    inner_row_height = (document.paper_height-document.margin) / rows_per_page;
+    column_height = inner_row_height - document.margin;
 }
 
 void sbj_t::new_column(int newcol=-1) {
@@ -294,25 +295,8 @@ void sbj_t::new_column(int newcol=-1) {
     rightx = spinex + step;
     markx = rightx + halfstep;
 
-    starty = (cur_row == 0 ? document.margin : document.margin/2) + cur_row * document.paper_height/rows_per_page;
+    starty = document.margin + inner_row_height * cur_row;
     riby = starty;
-}
-
-vector<string> split_words(string text);
-vector<string> phoneticize_words(vector<string> ws);
-void sb_t::render_at_inches(string text, float x, float y) {
-    vector<string> ws = split_words(text);
-    vector<string> ps = phoneticize_words(ws);
-
-    spinex = x;
-    leftx = spinex - step;
-    rightx = spinex + step;
-    markx = rightx + halfstep;
-
-    starty = y;
-    riby = starty;
-
-    render_phonetic_words(ps);
 }
 
 void sb_t::handle_new_page() {
@@ -325,11 +309,10 @@ void sbj_t::handle_new_page() {
 
 void sbj_t::render_row_separator(int row) {
     cairo_save(cr);
-    cairo_set_line_width(cr, ROW_SEP_LINE_WIDTH);
+    cairo_set_line_width(cr, SEP_LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
-    float row_height = (document.paper_height-document.margin*2) / rows_per_page;
-    float sepy = document.margin + row_height * row;
+    float sepy = document.margin/2 + inner_row_height * row;
     cairo_move_to(cr, document.margin,sepy);
     cairo_line_to(cr, document.paper_width-document.margin,sepy);
     cairo_stroke(cr);
@@ -1327,7 +1310,7 @@ void sbj_t::render_column_divider() {
     float frac = column_height / 3;
 
     cairo_save(cr);
-    cairo_set_line_width(cr, line_width/2);
+    cairo_set_line_width(cr, SEP_LINE_WIDTH);
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
     cairo_set_source_rgb(cr, 0.5,0.5,0.5);
     cairo_move_to(cr, spinex, col_top+frac);
@@ -1691,6 +1674,21 @@ vector<string> split_words(string text) {
     if (! w.empty()) ws.push_back(w);
 
     return ws;
+}
+
+void sb_t::render_at_inches(string text, float x, float y) {
+    vector<string> ws = split_words(text);
+    vector<string> ps = phoneticize_words(ws);
+
+    spinex = x;
+    leftx = spinex - step;
+    rightx = spinex + step;
+    markx = rightx + halfstep;
+
+    starty = y;
+    riby = starty;
+
+    render_phonetic_words(ps);
 }
 
 void sbj_t::render_column(vector<string> & ps) {
