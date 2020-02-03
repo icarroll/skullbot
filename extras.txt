@@ -563,7 +563,7 @@ studier st@dyr
 subjection sbdZEkSn
 subjoin s@bdZ!on
 subsisted s@bsIstt
-subsisting sUbsstN
+subsisting s@bsstN
 succous s@ks
 suck'd s@kt
 suitableness sut@blns
@@ -572,7 +572,7 @@ superciliousness suprslysns
 superintended suprntntt
 superintendence suprntntns
 superintends suprntnts
-superlatively sUpErl@tIvl`
+superlatively supErl@tIvl`
 supplication s@pl@keSn
 sympathise sImp@T!az
 syrupp'd sEr@pt
@@ -637,7 +637,7 @@ unreserve `nrzrv
 unreserved `nrzrvd
 unseldom `nsEld@m
 unsocial `nsoSl
-unstudied `nstUdt
+unstudied `nst@dt
 unsubdued `nsbdud
 unsuspicious `ns@spIS@s
 untamed `nt!emd

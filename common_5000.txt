@@ -192,7 +192,6 @@ try tr`
 tries trs
 trying tryN
 tried tr!ad
-in `In
 last lAst
 ask `sk
 asks `sks
@@ -355,7 +354,7 @@ wrote rot
 mother mTr
 area `ry`
 national nSnl
-money mn`
+money m@n`
 story str`
 young yN
 fact fAkt
@@ -2361,7 +2360,7 @@ wedding
 inform
 portion
 territory
-immediate `mdt
+immediate `midyt
 opponent
 abandon
 link
@@ -3182,7 +3181,6 @@ frequency
 tobacco
 survivor
 besides
-in
 psychologist
 wealthy
 galaxy
