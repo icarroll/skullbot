@@ -1304,7 +1304,7 @@ bool isprosody(char c) {
 }
 
 void sbj_t::render_column_divider() {
-    float col_top = (cur_row == 0 ? document.margin : document.margin/2) + cur_row * document.paper_height/rows_per_page;
+    float col_top = document.margin + inner_row_height * cur_row;
     float col_bot = col_top + column_height;
 
     float frac = column_height / 3;
@@ -2032,7 +2032,7 @@ int main(int nargs, char * args[])
             // chapter heading
             sbj.set_scale(2);
             //TODO use a separate skullbat context here
-            sbj.render_at_inches(para, doc.margin+sbj.step, doc.margin);
+            sbj.render_at_inches(para, doc.margin+sbj.word_width/2, doc.margin);
             sbj.set_scale(1);
 
             sbj.new_column(2);
