@@ -70,10 +70,10 @@ struct skullbat_context_t {
     float line_width;
 
     float unit;
+    float word_width;
 
     float step;
     float halfstep;
-    float step2;
     float ribstep;
     float vowelstep;
     float wordstep;
@@ -152,11 +152,10 @@ struct skullbat_justification_context_t : skullbat_context_t {
     float column_height;
 
     float colstep;
+    int ncols;
 
     int cur_col = 0;
     int cur_row = 0;
-
-    float col_bot;
 
     skullbat_justification_context_t(document_t & newdoc, float newscale=1.0,
                                      int newrows=2)
@@ -203,6 +202,19 @@ void document_t::new_page() {
     }
 
     mark_page_number();
+
+    /*
+    cairo_t * cr = cairo_create(csurf);
+    cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
+    cairo_move_to(cr, margin, 0);
+    cairo_line_to(cr, margin, paper_height);
+    cairo_move_to(cr, paper_width-margin, 0);
+    cairo_line_to(cr, paper_width-margin, paper_height);
+    cairo_set_source_rgb(cr, 1,0,0);
+    cairo_set_line_width(cr, 0.01);
+    cairo_stroke(cr);
+    cairo_destroy(cr);
+    */
 }
 
 bool even(int n) {
@@ -242,10 +254,10 @@ void sb_t::set_scale(float newscale) {
     cairo_set_line_width(cr, line_width/2);
 
     unit = scale/5.0;
+    word_width = unit;
 
     step = unit/4;
     halfstep = step/2;
-    step2 = step*2;
     ribstep = 2*step/3;
     vowelstep = ribstep;
     wordstep = step;
@@ -262,7 +274,10 @@ void sb_t::set_scale(float newscale) {
 void sbj_t::set_scale(float newscale) {
     sb_t::set_scale(newscale);
 
-    colstep = 2*unit/2;
+    float row_width = document.paper_width - document.margin*2;
+
+    ncols = row_width / word_width;
+    colstep = row_width / ncols;
 }
 
 void sbj_t::set_row_count(int n) {
@@ -273,7 +288,7 @@ void sbj_t::set_row_count(int n) {
 void sbj_t::new_column(int newcol=-1) {
     if (newcol != -1) cur_col = newcol;
 
-    spinex = document.margin + step + cur_col*colstep;
+    spinex = document.margin + word_width/2 + cur_col*colstep;
     if (newcol == -1) cur_col += 1;
     leftx = spinex - step;
     rightx = spinex + step;
@@ -281,8 +296,6 @@ void sbj_t::new_column(int newcol=-1) {
 
     starty = (cur_row == 0 ? document.margin : document.margin/2) + cur_row * document.paper_height/rows_per_page;
     riby = starty;
-
-    col_bot = starty + column_height;
 }
 
 vector<string> split_words(string text);
@@ -1682,7 +1695,7 @@ vector<string> split_words(string text) {
 
 void sbj_t::render_column(vector<string> & ps) {
     new_column();
-    if (spinex > document.paper_width-document.margin-step-halfstep) new_row();
+    if (cur_col > ncols) new_row();
     render_phonetic_words(ps);
 }
 
@@ -1693,8 +1706,8 @@ void sbj_t::render_columns(string text) {
     vector<string> col_ps;
     float col_size = 0;
     for (auto it=ps.begin() ; it!=ps.end() ; ++it) {
-        auto w = * it;
-        if (w == STARS) {
+        auto p = * it;
+        if (p == STARS) {
             render_column(col_ps);
             col_ps.clear();
             col_size = 0;
@@ -1703,9 +1716,9 @@ void sbj_t::render_columns(string text) {
             continue;
         }
 
-        float word_size = size_phonetic_word(w);
+        float word_size = size_phonetic_word(p);
         if (col_size + word_size <= column_height) {
-            col_ps.push_back(w);
+            col_ps.push_back(p);
             col_size += word_size + wordstep;
         }
         else {
@@ -1713,7 +1726,7 @@ void sbj_t::render_columns(string text) {
             col_ps.clear();
             col_size = 0;
 
-            col_ps.push_back(w);
+            col_ps.push_back(p);
             col_size += word_size + wordstep;
         }
     }
