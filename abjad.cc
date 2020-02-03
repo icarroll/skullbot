@@ -93,7 +93,6 @@ struct skullbat_context_t {
 
     float starty;
     float riby;
-    float vowely;
 
     bool emphasis = false;
 
@@ -125,9 +124,9 @@ struct skullbat_context_t {
     vowel_space_t vowel_space(char c);
     float size_vowel_hook();
     void render_vowel_hook();
-    void render_monopthong(char c, float vowelx);
-    void render_i_dipthong(char c, float vowelx);
-    void render_u_dipthong(char c, float vowelx);
+    void render_monopthong(char c, float x, float y);
+    void render_i_dipthong(char c, float x, float y);
+    void render_u_dipthong(char c, float x, float y);
     float size_logogram_word(string w);
     void render_logogram_word(string w);
     float size_vowel_word(string w);
@@ -136,9 +135,7 @@ struct skullbat_context_t {
     void render_digit(char c);
     float size_numeral(string w);
     void render_numeral(string w);
-    float size_vowel(string v, float vowelx, float vowely);
-    void render_vowel(string v, float vowelx);
-    void render_vowel_at(string v, float x, float y);
+    void render_vowel(string v, float x, float y);
     float size_punct(string w);
     void render_punct(string w);
     float size_phonetic_word(string w);
@@ -637,10 +634,7 @@ void sb_t::render_vowel_hook() {
     riby += halfstep;
 }
 
-void sb_t::render_monopthong(char c, float vowelx) {
-    float x = vowelx;
-    float y = vowely;
-
+void sb_t::render_monopthong(char c, float x, float y) {
     switch (c) {
     case 'i':   // seat
         x += halfstep/2 /2;
@@ -794,10 +788,7 @@ void sb_t::render_monopthong(char c, float vowelx) {
     }
 }
 
-void sb_t::render_i_dipthong(char c, float vowelx) {
-    float x = vowelx;
-    float y = vowely;
-
+void sb_t::render_i_dipthong(char c, float x, float y) {
     switch (c) {
     case 'e':   // !e ei say
         x += halfstep /2 + halfstep/2 /2;
@@ -848,10 +839,7 @@ void sb_t::render_i_dipthong(char c, float vowelx) {
     }
 }
 
-void sb_t::render_u_dipthong(char c, float vowelx) {
-    float x = vowelx;
-    float y = vowely;
-
+void sb_t::render_u_dipthong(char c, float x, float y) {
     switch (c) {
     case 'a':   // ^a au south
         x -= halfstep * sqrt(3)/2 /2;
@@ -996,8 +984,8 @@ void sb_t::render_vowel_word(string w) {
     else if (w == "E") {
         cairo_arc(cr, spinex,riby, halfstep, 2*M_PI,M_PI);
         riby += halfstep;
-        vowely = riby - halfstep;
-        render_vowel("i", markx);
+        float vowely = riby - halfstep;
+        render_vowel("i", markx, vowely);
     }
     else if (w == "I") {
         riby += step;
@@ -1015,8 +1003,8 @@ void sb_t::render_vowel_word(string w) {
         cairo_new_sub_path(cr);
         cairo_arc(cr, spinex,riby, halfstep, 0,2*M_PI);
         riby += halfstep;
-        vowely = riby - halfstep;
-        render_vowel("u", markx);
+        float vowely = riby - halfstep;
+        render_vowel("u", markx, vowely);
     }
     else cout << "unknown vowel word: " << w << endl;
 
@@ -1165,26 +1153,17 @@ void sb_t::render_numeral(string w) {
     cairo_stroke(cr);
 }
 
-float sb_t::size_vowel(string v, float vowelx, float vowely) {
-    return 0;
-}
-
-void sb_t::render_vowel(string v, float vowelx) {
+void sb_t::render_vowel(string v, float x, float y) {
     cairo_path_t * saved_path = cairo_copy_path(cr);
     cairo_new_path(cr);
 
-    if (v[0] == '!') render_i_dipthong(v[1], vowelx);
-    else if (v[0] == '^') render_u_dipthong(v[1], vowelx);
-    else render_monopthong(v[0], vowelx);
+    if (v[0] == '!') render_i_dipthong(v[1], x, y);
+    else if (v[0] == '^') render_u_dipthong(v[1], x, y);
+    else render_monopthong(v[0], x, y);
 
     cairo_new_path(cr);
     cairo_append_path(cr, saved_path);
     cairo_path_destroy(saved_path);
-}
-
-void sb_t::render_vowel_at(string v, float x, float y) {
-    vowely = y;
-    render_vowel(v, x);
 }
 
 vector<string> split_vowels(string text) {
@@ -1436,13 +1415,6 @@ float sb_t::size_phonetic_word(string w) {
 
                 vowely_center = (prevy + nexty) / 2;
             }
-
-            float vowelx = markx;
-            float temp_vowely = vowely_center - vowel_size * (vs.size()-1) / 2.0;
-            for (string v : vs) {
-                size_vowel(v, vowelx, temp_vowely);
-                temp_vowely += vowel_size;
-            }
         }
 
         ix = nextrib_ix;
@@ -1553,10 +1525,9 @@ void sb_t::render_phonetic_word(string w) {
                 vowely_center = (prevy + nexty) / 2;
             }
 
-            float vowelx = markx;
-            vowely = vowely_center - vowel_size * (vs.size()-1) / 2.0;
+            float vowely = vowely_center - vowel_size * (vs.size()-1) / 2.0;
             for (string v : vs) {
-                render_vowel(v, vowelx);
+                render_vowel(v, markx, vowely);
                 vowely += vowel_size;
             }
         }
@@ -1940,7 +1911,7 @@ void kp_t::render_key_page() {
     }
     yy = y;
     for (string s : {"i","I","e","E","A"}) {
-        if (s.length()) render_vowel_at(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        if (s.length()) render_vowel(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
         yy += 1;
     }
     x = 1;
@@ -1951,7 +1922,7 @@ void kp_t::render_key_page() {
     }
     yy = y;
     for (string s : {"","","@","","a"}) {
-        if (s.length()) render_vowel_at(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        if (s.length()) render_vowel(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
         yy += 1;
     }
     x = 2;
@@ -1962,7 +1933,7 @@ void kp_t::render_key_page() {
     }
     yy = y;
     for (string s : {"u","U","o","","O"}) {
-        if (s.length()) render_vowel_at(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        if (s.length()) render_vowel(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
         yy += 1;
     }
 
@@ -1977,7 +1948,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"!e","!a","!o","^a","^o"}) {
-        render_vowel_at(s, document.margin+x*0.7+te.width*2.5, document.margin+fe.height*2.0/3.0 + y *1.5*fe.height);
+        render_vowel(s, document.margin+x*0.7+te.width*2.5, document.margin+fe.height*2.0/3.0 + y *1.5*fe.height);
         x += 1;
     }
 
