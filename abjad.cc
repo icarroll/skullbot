@@ -161,6 +161,7 @@ struct skullbat_justification_context_t : skullbat_context_t {
     skullbat_justification_context_t(document_t & newdoc, float newscale=1.0,
                                      int newrows=2)
             : skullbat_context_t(newdoc, newscale) {
+        set_scale(newscale);
         set_row_count(newrows);
     }
 
@@ -286,6 +287,7 @@ void sbj_t::set_row_count(int newrows) {
     column_height = inner_row_height - document.margin;
 }
 
+//TODO fix newcol handling
 void sbj_t::new_column(int newcol=-1) {
     if (newcol != -1) cur_col = newcol;
 
@@ -2005,39 +2007,38 @@ int main(int nargs, char * args[])
     */
 
     // Pride and Prejudice driver
-    vector<string> paras;
+    vector<string> title_paras;
+    vector<string> rest_paras;
+
     string para;
+    bool title_page = true;
     for (string line : lines) {
+        if (line.substr(0,7) == "Chapter") title_page = false;
+
         if (line.size()) para += line + " ";
         else {
-            paras.push_back(para);
+            if (title_page) title_paras.push_back(para);
+            else rest_paras.push_back(para);
             para.clear();
         }
     }
-    paras.push_back(para);
+    rest_paras.push_back(para);
 
     document_t doc("abjad.pdf");
-    skullbat_justification_context_t sbj(doc);
+    skullbat_justification_context_t title(doc, 7, 1);
+    skullbat_justification_context_t chap(doc, 2);
+    skullbat_justification_context_t text(doc);
 
     doc.new_page();
-    //TODO use a separate skullbat context here
-    sbj.set_scale(7);
-    sbj.set_row_count(1);
-    for (string para : paras) {
+    for (string para : title_paras) title.render_columns(para);
+
+    for (string para : rest_paras) {
         if (para.substr(0,7) == "Chapter") {
-            sbj.set_scale(1);
-            sbj.set_row_count(2);
             doc.new_page();
-
-            // chapter heading
-            sbj.set_scale(2);
-            //TODO use a separate skullbat context here
-            sbj.render_at_inches(para, doc.margin+sbj.word_width/2, doc.margin);
-            sbj.set_scale(1);
-
-            sbj.new_column(2);
+            chap.render_columns(para);
+            text.new_column(2);
         }
-        else sbj.render_columns(para);
+        else text.render_columns(para);
     }
 
     doc.new_page();
