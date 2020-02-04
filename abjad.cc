@@ -105,14 +105,14 @@ struct skullbat_context_t {
         cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
         cairo_set_source_rgb(cr, 0,0,0);
 
-        set_scale(newscale);
+        set_skullbat_scale(newscale);
     }
 
     ~skullbat_context_t() {
         cairo_destroy(cr);
     }
 
-    virtual void set_scale(float newscale);
+    void set_skullbat_scale(float newscale);
     void render_at_inches(string text, float x, float y);
     void render_voice_mark(float offset);
     float size_consonant(char c);
@@ -145,6 +145,8 @@ struct skullbat_justification_context_t : skullbat_context_t {
     const float SEP_LINE_WIDTH = 0.01/2;
     const float COLUMN_SPACING = 1.25;
 
+    cairo_t * scr;   // separator cairo context
+
     float rows_per_page;
     float inner_row_height;
     float column_height;
@@ -163,12 +165,24 @@ struct skullbat_justification_context_t : skullbat_context_t {
             : skullbat_context_t(newdoc, newscale) {
         newdoc.new_page_subscribe(this);
 
-        set_scale(newscale);
+        scr = cairo_create(document.csurf);
+        cairo_scale(scr, POINTS_PER_INCH, POINTS_PER_INCH);
+        cairo_set_line_width(scr, SEP_LINE_WIDTH);
+        cairo_set_line_cap(scr, CAIRO_LINE_CAP_SQUARE);
+        cairo_set_line_join(scr, CAIRO_LINE_JOIN_ROUND);
+        cairo_set_source_rgb(scr, 0.5,0.5,0.5);
+
+        set_column_scale(newscale);
         set_row_count(newrows);
         first_row();
     }
 
-    virtual void set_scale(float newscale);
+    ~skullbat_justification_context_t() {
+        document.new_page_unsubscribe(this);
+        cairo_destroy(scr);
+    }
+
+    void set_column_scale(float newscale);
     void set_row_count(int newrows);
     void set_column(int newcol);
     void next_column();
@@ -235,7 +249,7 @@ void document_t::save_and_close() {
     cairo_surface_destroy(csurf);
 }
 
-void sb_t::set_scale(float newscale) {
+void sb_t::set_skullbat_scale(float newscale) {
     scale = newscale;
 
     cairo_set_line_width(cr, scale*0.01/2);
@@ -258,9 +272,7 @@ void sb_t::set_scale(float newscale) {
     vowel_size = halfstep + 2*dotrad;
 }
 
-void sbj_t::set_scale(float newscale) {
-    sb_t::set_scale(newscale);
-
+void sbj_t::set_column_scale(float newscale) {
     float row_width = document.paper_width - document.margin*2;
 
     ncols = row_width / (word_width * COLUMN_SPACING);
@@ -293,15 +305,10 @@ void sbj_t::next_column() {
 }
 
 void sbj_t::render_row_separator(int row) {
-    cairo_save(cr);
-    cairo_set_line_width(cr, SEP_LINE_WIDTH);
-    cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
-    cairo_set_source_rgb(cr, 0.5,0.5,0.5);
     float sepy = document.margin/2 + inner_row_height * (row-1);
-    cairo_move_to(cr, document.margin,sepy);
-    cairo_line_to(cr, document.paper_width-document.margin,sepy);
-    cairo_stroke(cr);
-    cairo_restore(cr);
+    cairo_move_to(scr, document.margin,sepy);
+    cairo_line_to(scr, document.paper_width-document.margin,sepy);
+    cairo_stroke(scr);
 }
 
 void sbj_t::first_row() {
@@ -1308,14 +1315,9 @@ void sbj_t::render_column_divider() {
 
     float frac = column_height / 3;
 
-    cairo_save(cr);
-    cairo_set_line_width(cr, SEP_LINE_WIDTH);
-    cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
-    cairo_set_source_rgb(cr, 0.5,0.5,0.5);
-    cairo_move_to(cr, spinex, col_top+frac);
-    cairo_line_to(cr, spinex, col_bot-frac);
-    cairo_stroke(cr);
-    cairo_restore(cr);
+    cairo_move_to(scr, spinex, col_top+frac);
+    cairo_line_to(scr, spinex, col_bot-frac);
+    cairo_stroke(scr);
 
     need_fresh_column = true;
 }
@@ -1765,7 +1767,7 @@ void kp_t::render_skullbat(string text, float x, float y) {
 void kp_t::render_key_page() {
     draw_skull_bat(1, document.paper_width/2-0.5, document.margin - 3.0/4.0 /2);
 
-    set_scale(1.5);
+    set_skullbat_scale(1.5);
 
     cairo_select_font_face(cr, "DejaVu Serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
     cairo_set_font_size(cr, FONT_SIZE/POINTS_PER_INCH);
@@ -1887,7 +1889,7 @@ void kp_t::render_key_page() {
 
     y += 1;
     render_latin("Diacritics (optional if unambiguous)", document.margin, document.margin+fe.height+ y *1.5*fe.height);
-    set_scale(3);
+    set_skullbat_scale(3);
 
     y += 1;
     render_latin("monopthongs", document.margin, document.margin+fe.height+ y *1.5*fe.height);
@@ -1945,7 +1947,7 @@ void kp_t::render_key_page() {
         x += 1;
     }
 
-    set_scale(1);
+    set_skullbat_scale(1);
 }
 
 void load_phonetic() {
@@ -1974,21 +1976,6 @@ int main(int nargs, char * args[])
 
     vector<string> lines = load_text(args[1]);
 
-    /*
-    // Goblin Market driver
-    new_page();
-    set_row_count(2);
-    for (string line : lines) {
-        if (line.empty()) new_column();
-        else {
-            auto ws = split_words(line);
-            auto ps = phoneticize_words(ws);
-            render_column(ps);
-        }
-    }
-    */
-
-    // Pride and Prejudice driver
     vector<string> title_paras;
     vector<string> rest_paras;
 
