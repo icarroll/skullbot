@@ -15,6 +15,8 @@ extern "C" {
 #include <cairo-pdf.h>
 }
 
+#include "text.h"
+
 using namespace std;
 
 void die(string message) {
@@ -23,7 +25,7 @@ void die(string message) {
 }
 
 float nan() {
-    //TODO this is never checked for, retain?
+    // presence is not checked explicitly, exception thrown if use is attempted
     return numeric_limits<float>::signaling_NaN();
 }
 
@@ -31,7 +33,7 @@ const float POINTS_PER_INCH = 72.0;
 
 struct skullbat_context_t;
 struct skullbat_justification_context_t;
-struct document_t {
+struct target_t {
     cairo_surface_t * csurf;
 
     float paper_width;
@@ -42,10 +44,10 @@ struct document_t {
     skullbat_context_t * pn;   // for rendering page number
     int page_number = 0;
 
-    set<skullbat_justification_context_t *> contexts;
+    set<skullbat_justification_context_t *> sbj_contexts;
 
-    document_t(string filename, float newwidth=5.5, float newheight=8.5,
-               float newmargin=1.0);
+    target_t(string filename, float newwidth=5.5, float newheight=8.5,
+             float newmargin=1.0);
 
     void new_page_subscribe(skullbat_justification_context_t * sbj);
     void new_page_unsubscribe(skullbat_justification_context_t * sbj);
@@ -63,7 +65,7 @@ struct vowel_space_t {
 };
 
 struct skullbat_context_t {
-    document_t & document;
+    target_t & target;
     cairo_t * cr;
 
     float scale;
@@ -95,10 +97,10 @@ struct skullbat_context_t {
 
     bool emphasis = false;
 
-    skullbat_context_t(document_t & newdoc, float newscale=1.0)
-            : document(newdoc) {
+    skullbat_context_t(target_t & newtgt, float newscale=1.0)
+            : target(newtgt) {
 
-        cr = cairo_create(document.csurf);
+        cr = cairo_create(target.csurf);
         cairo_scale(cr, POINTS_PER_INCH, POINTS_PER_INCH);
 
         cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -160,12 +162,12 @@ struct skullbat_justification_context_t : skullbat_context_t {
     int cur_col;
     int cur_row;
 
-    skullbat_justification_context_t(document_t & newdoc, float newscale=1.0,
+    skullbat_justification_context_t(target_t & newtgt, float newscale=1.0,
                                      int newrows=2)
-            : skullbat_context_t(newdoc, newscale) {
-        newdoc.new_page_subscribe(this);
+            : skullbat_context_t(newtgt, newscale) {
+        newtgt.new_page_subscribe(this);
 
-        scr = cairo_create(document.csurf);
+        scr = cairo_create(target.csurf);
         cairo_scale(scr, POINTS_PER_INCH, POINTS_PER_INCH);
         cairo_set_line_width(scr, SEP_LINE_WIDTH);
         cairo_set_line_cap(scr, CAIRO_LINE_CAP_SQUARE);
@@ -178,7 +180,7 @@ struct skullbat_justification_context_t : skullbat_context_t {
     }
 
     ~skullbat_justification_context_t() {
-        document.new_page_unsubscribe(this);
+        target.new_page_unsubscribe(this);
         cairo_destroy(scr);
     }
 
@@ -191,14 +193,13 @@ struct skullbat_justification_context_t : skullbat_context_t {
     void next_row();
     void handle_new_page();
     void render_column_divider();
-    void render_column(vector<string> & ps);
     void render_columns(string text);
 };
 
 using sbj_t = skullbat_justification_context_t;
 
-document_t::document_t(string filename, float newwidth, float newheight,
-                       float newmargin) {
+target_t::target_t(string filename, float newwidth, float newheight,
+                   float newmargin) {
     paper_width = newwidth;
     paper_height = newheight;
     margin = newmargin;
@@ -213,36 +214,36 @@ document_t::document_t(string filename, float newwidth, float newheight,
     new_page();
 }
 
-void document_t::new_page_subscribe(sbj_t * sbj) {
-    contexts.insert(sbj);
+void target_t::new_page_subscribe(sbj_t * sbj) {
+    sbj_contexts.insert(sbj);
 }
 
-void document_t::new_page_unsubscribe(sbj_t * sbj) {
-    contexts.erase(sbj);
+void target_t::new_page_unsubscribe(sbj_t * sbj) {
+    sbj_contexts.erase(sbj);
 }
 
-void document_t::new_page() {
+void target_t::new_page() {
     page_number += 1;
 
     if (page_number > 1) cairo_surface_show_page(csurf);
 
     mark_page_number();
 
-    for (sbj_t * sbj : contexts) sbj->handle_new_page();
+    for (sbj_t * sbj : sbj_contexts) sbj->handle_new_page();
 }
 
 bool even(int n) {
     return n % 2 == 0;
 }
 
-void document_t::mark_page_number() {
+void target_t::mark_page_number() {
     string text = to_string(page_number);
     float x = even(page_number) ? margin/2 : paper_width - margin/2;
     float y = margin/2;
     pn->render_at_inches(text, x, y);
 }
 
-void document_t::save_and_close() {
+void target_t::save_and_close() {
     cairo_surface_show_page(csurf);
 
     cairo_surface_finish(csurf);
@@ -273,7 +274,7 @@ void sb_t::set_skullbat_scale(float newscale) {
 }
 
 void sbj_t::set_column_scale(float newscale) {
-    float row_width = document.paper_width - document.margin*2;
+    float row_width = target.paper_width - target.margin*2;
 
     ncols = row_width / (word_width * COLUMN_SPACING);
     colstep = row_width / ncols;
@@ -281,19 +282,20 @@ void sbj_t::set_column_scale(float newscale) {
 
 void sbj_t::set_row_count(int newrows) {
     rows_per_page = newrows;
-    inner_row_height = (document.paper_height-document.margin) / rows_per_page;
-    column_height = inner_row_height - document.margin;
+    inner_row_height = (target.paper_height - target.margin) / rows_per_page;
+    column_height = inner_row_height - target.margin;
 }
 
+//TODO unify setting x and y skullbat rendering positions
 void sbj_t::set_column(int newcol) {
     cur_col = newcol;
 
-    spinex = document.margin + word_width/2 + (cur_col-1)*colstep;
+    spinex = target.margin + word_width/2 + (cur_col-1)*colstep;
     leftx = spinex - step;
     rightx = spinex + step;
     markx = rightx + halfstep;
 
-    starty = document.margin + inner_row_height * (cur_row-1);
+    starty = target.margin + inner_row_height * (cur_row-1);
     riby = starty;
 
     need_fresh_column = false;
@@ -305,9 +307,9 @@ void sbj_t::next_column() {
 }
 
 void sbj_t::render_row_separator(int row) {
-    float sepy = document.margin/2 + inner_row_height * (row-1);
-    cairo_move_to(scr, document.margin,sepy);
-    cairo_line_to(scr, document.paper_width-document.margin,sepy);
+    float sepy = target.margin/2 + inner_row_height * (row-1);
+    cairo_move_to(scr, target.margin, sepy);
+    cairo_line_to(scr, target.paper_width - target.margin, sepy);
     cairo_stroke(scr);
 }
 
@@ -320,7 +322,7 @@ void sbj_t::next_row() {
     cur_row += 1;
 
     if (cur_row > rows_per_page) {
-        document.new_page();
+        target.new_page();
         first_row();
     }
     else {
@@ -1310,7 +1312,7 @@ bool isprosody(char c) {
 void sbj_t::render_column_divider() {
     next_column();
 
-    float col_top = document.margin + inner_row_height * (cur_row-1);
+    float col_top = target.margin + inner_row_height * (cur_row-1);
     float col_bot = col_top + column_height;
 
     float frac = column_height / 3;
@@ -1724,8 +1726,8 @@ struct keypage_context_t : skullbat_context_t {
     void render_skullbat(string text, float x, float y);
     void render_key_page();
 
-    keypage_context_t(document_t & newdoc, float newscale=1.0)
-            : skullbat_context_t(newdoc, newscale) {
+    keypage_context_t(target_t & newtgt, float newscale=1.0)
+            : skullbat_context_t(newtgt, newscale) {
     }
 };
 
@@ -1765,7 +1767,7 @@ void kp_t::render_skullbat(string text, float x, float y) {
 }
 
 void kp_t::render_key_page() {
-    draw_skull_bat(1, document.paper_width/2-0.5, document.margin - 3.0/4.0 /2);
+    draw_skull_bat(1, target.paper_width/2-0.5, target.margin - 3.0/4.0 /2);
 
     set_skullbat_scale(1.5);
 
@@ -1779,28 +1781,28 @@ void kp_t::render_key_page() {
     int x = 0;
     int y = 0;
 
-    render_latin("Skullbat Key", document.margin, document.margin+fe.height+ y *1.5*fe.height);
+    render_latin("Skullbat Key", target.margin, target.margin+fe.height+ y *1.5*fe.height);
 
     cairo_select_font_face(cr, "DejaVu Serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_font_extents(cr, & fe);
     cairo_text_extents(cr, "W", & te);
 
     y += 1;
-    render_latin("Consonants", document.margin, document.margin+fe.height + y *1.5*fe.height);
+    render_latin("Consonants", target.margin, target.margin+fe.height + y *1.5*fe.height);
     y += 1;
-    render_latin("(voicing mark is optional if unambiguous)", document.margin, document.margin+fe.height + y *1.5*fe.height);
+    render_latin("(voicing mark is optional if unambiguous)", target.margin, target.margin+fe.height + y *1.5*fe.height);
 
     const float SKT = 1.6667;
 
     y += 1;
     x = 0;
     for (string s : {"P","B","M","F","V","W"}) {
-        render_latin(s, document.margin+x*0.6, document.margin+fe.height + y *1.5*fe.height);
+        render_latin(s, target.margin+x*0.6, target.margin+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"p","b","m","f","v","w"}) {
-        render_skullbat(s, document.margin+x*0.6+te.width*SKT, document.margin+fe.height/2 + y *1.5*fe.height);
+        render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1808,24 +1810,24 @@ void kp_t::render_key_page() {
     x = 0;
     for (string s : {"","","","TH","DH",""}) {
         float nudge = s.length() > 1 ? 0.1 : 0;
-        render_latin(s, document.margin+x*0.6-nudge, document.margin+fe.height + y *1.5*fe.height);
+        render_latin(s, target.margin+x*0.6-nudge, target.margin+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"","","","T","D",""}) {
-        if (s.length()) render_skullbat(s, document.margin+x*0.6+te.width*SKT, document.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
     y += 1;
     x = 0;
     for (string s : {"T","D","N","S","Z","L"}) {
-        render_latin(s, document.margin+x*0.6, document.margin+fe.height + y *1.5*fe.height);
+        render_latin(s, target.margin+x*0.6, target.margin+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"t","d","n","s","z","l"}) {
-        render_skullbat(s, document.margin+x*0.6+te.width*SKT, document.margin+fe.height/2 + y *1.5*fe.height);
+        render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1833,12 +1835,12 @@ void kp_t::render_key_page() {
     x = 0;
     for (string s : {"","","","SH","ZH","R"}) {
         float nudge = s.length() > 1 ? 0.1 : 0;
-        render_latin(s, document.margin+x*0.6-nudge, document.margin+fe.height + y *1.5*fe.height);
+        render_latin(s, target.margin+x*0.6-nudge, target.margin+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"","","","S","Z","r"}) {
-        if (s.length()) render_skullbat(s, document.margin+x*0.6+te.width*SKT, document.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1846,12 +1848,12 @@ void kp_t::render_key_page() {
     x = 0;
     for (string s : {"K","G","NG","","","Y"}) {
         float nudge = s.length() > 1 ? 0.1 : 0;
-        render_latin(s, document.margin+x*0.6-nudge, document.margin+fe.height + y *1.5*fe.height);
+        render_latin(s, target.margin+x*0.6-nudge, target.margin+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"k","g","N","","","y"}) {
-        if (s.length()) render_skullbat(s, document.margin+x*0.6+te.width*SKT, document.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1859,40 +1861,40 @@ void kp_t::render_key_page() {
     x = 0;
     for (string s : {"","","","H","",""}) {
         float nudge = s.length() > 1 ? 0.1 : 0;
-        render_latin(s, document.margin+x*0.6-nudge, document.margin+fe.height + y *1.5*fe.height);
+        render_latin(s, target.margin+x*0.6-nudge, target.margin+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"","","","h","",""}) {
-        if (s.length()) render_skullbat(s, document.margin+x*0.6+te.width*SKT, document.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
     y += 1;
-    render_latin("Vowels", document.margin, document.margin+fe.height + y *1.5*fe.height);
+    render_latin("Vowels", target.margin, target.margin+fe.height + y *1.5*fe.height);
 
     y += 1;
-    render_latin("Full words only", document.margin, document.margin+fe.height + y *1.5*fe.height);
+    render_latin("Full words only", target.margin, target.margin+fe.height + y *1.5*fe.height);
 
     y += 1;
     x = 0;
     for (string s : {"A","E","I","O","OO"}) {
         float nudge = s.length() > 1 ? 0.1 : 0;
-        render_latin(s, document.margin+x*0.6-nudge, document.margin+fe.height + y *1.5*fe.height);
+        render_latin(s, target.margin+x*0.6-nudge, target.margin+fe.height + y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"A","E","I","O","U"}) {
-        if (s.length()) render_skullbat(s, document.margin+x*0.6+te.width*SKT, document.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
         x += 1;
     }
 
     y += 1;
-    render_latin("Diacritics (optional if unambiguous)", document.margin, document.margin+fe.height+ y *1.5*fe.height);
+    render_latin("Diacritics (optional if unambiguous)", target.margin, target.margin+fe.height+ y *1.5*fe.height);
     set_skullbat_scale(3);
 
     y += 1;
-    render_latin("monopthongs", document.margin, document.margin+fe.height+ y *1.5*fe.height);
+    render_latin("monopthongs", target.margin, target.margin+fe.height+ y *1.5*fe.height);
 
     int yy = 0;
 
@@ -1901,49 +1903,49 @@ void kp_t::render_key_page() {
     x = 0;
     yy = y;
     for (string s : {"i","ɪ","e","ɛ","æ"}) {
-        render_latin("/"+s+"/", document.margin+x*1.0, document.margin+fe.height+ yy *1.5*fe.height);
+        render_latin("/"+s+"/", target.margin+x*1.0, target.margin+fe.height+ yy *1.5*fe.height);
         yy += 1;
     }
     yy = y;
     for (string s : {"i","I","e","E","A"}) {
-        if (s.length()) render_vowel(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        if (s.length()) render_vowel(s, target.margin+x*1.0+te.width*2.5, target.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
         yy += 1;
     }
     x = 1;
     yy = y;
     for (string s : {"","","ə","","a"}) {
-        if (s.length()) render_latin("/"+s+"/", document.margin+x*1.0, document.margin+fe.height+ yy *1.5*fe.height);
+        if (s.length()) render_latin("/"+s+"/", target.margin+x*1.0, target.margin+fe.height+ yy *1.5*fe.height);
         yy += 1;
     }
     yy = y;
     for (string s : {"","","@","","a"}) {
-        if (s.length()) render_vowel(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        if (s.length()) render_vowel(s, target.margin+x*1.0+te.width*2.5, target.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
         yy += 1;
     }
     x = 2;
     yy = y;
     for (string s : {"u","ʊ","o","","ɒ"}) {
-        if (s.length()) render_latin("/"+s+"/", document.margin+x*1.0, document.margin+fe.height+ yy *1.5*fe.height);
+        if (s.length()) render_latin("/"+s+"/", target.margin+x*1.0, target.margin+fe.height+ yy *1.5*fe.height);
         yy += 1;
     }
     yy = y;
     for (string s : {"u","U","o","","O"}) {
-        if (s.length()) render_vowel(s, document.margin+x*1.0+te.width*2.5, document.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
+        if (s.length()) render_vowel(s, target.margin+x*1.0+te.width*2.5, target.margin+fe.height*2.0/3.0 + yy *1.5*fe.height);
         yy += 1;
     }
 
     y += 5;
-    render_latin("dipthongs", document.margin, document.margin+fe.height + y *1.5*fe.height);
+    render_latin("dipthongs", target.margin, target.margin+fe.height + y *1.5*fe.height);
 
     y += 1;
     x = 0;
     for (string s : {"ei","ai","oi","au","ou"}) {
-        render_latin("/"+s+"/", document.margin+x*0.7, document.margin+fe.height+ y *1.5*fe.height);
+        render_latin("/"+s+"/", target.margin+x*0.7, target.margin+fe.height+ y *1.5*fe.height);
         x += 1;
     }
     x = 0;
     for (string s : {"!e","!a","!o","^a","^o"}) {
-        render_vowel(s, document.margin+x*0.7+te.width*2.5, document.margin+fe.height*2.0/3.0 + y *1.5*fe.height);
+        render_vowel(s, target.margin+x*0.7+te.width*2.5, target.margin+fe.height*2.0/3.0 + y *1.5*fe.height);
         x += 1;
     }
 
@@ -1993,28 +1995,28 @@ int main(int nargs, char * args[])
     }
     rest_paras.push_back(para);
 
-    document_t doc("abjad.pdf");
-    skullbat_justification_context_t title(doc, 7, 1);
-    skullbat_justification_context_t chap(doc, 2);
-    skullbat_justification_context_t text(doc);
+    target_t tgt("abjad.pdf");
+    skullbat_justification_context_t title(tgt, 7, 1);
+    skullbat_justification_context_t chap(tgt, 2);
+    skullbat_justification_context_t text(tgt);
 
     for (string para : title_paras) title.render_columns(para);
 
     for (string para : rest_paras) {
         if (para.find(STARS) != string::npos) text.render_column_divider();
         else if (para.substr(0,7) == "Chapter") {
-            doc.new_page();
+            tgt.new_page();
             chap.render_columns(para);
             text.set_column(3);
         }
         else text.render_columns(para);
     }
 
-    doc.new_page();
+    tgt.new_page();
 
-    keypage_context_t kp(doc);
+    keypage_context_t kp(tgt);
     kp.render_key_page();
 
-    doc.save_and_close();
+    tgt.save_and_close();
     return 0;
 }
