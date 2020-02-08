@@ -1802,7 +1802,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"p","b","m","f","v","w"}) {
-        render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height*2/3 + y *1.5*fe.height -size_phonetic_word(s)/2);
         x += 1;
     }
 
@@ -1815,7 +1815,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"","","","T","D",""}) {
-        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height*2/3 + y *1.5*fe.height -size_phonetic_word(s)/2);
         x += 1;
     }
 
@@ -1827,7 +1827,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"t","d","n","s","z","l"}) {
-        render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height*2/3 + y *1.5*fe.height -size_phonetic_word(s)/2);
         x += 1;
     }
 
@@ -1840,7 +1840,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"","","","S","Z","r"}) {
-        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height*2/3 + y *1.5*fe.height -size_phonetic_word(s)/2);
         x += 1;
     }
 
@@ -1853,7 +1853,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"k","g","N","","","y"}) {
-        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height*2/3 + y *1.5*fe.height -size_phonetic_word(s)/2);
         x += 1;
     }
 
@@ -1866,7 +1866,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"","","","h","",""}) {
-        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height*2/3 + y *1.5*fe.height -size_phonetic_word(s)/2);
         x += 1;
     }
 
@@ -1885,7 +1885,7 @@ void kp_t::render_key_page() {
     }
     x = 0;
     for (string s : {"A","E","I","O","U"}) {
-        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height/2 + y *1.5*fe.height);
+        if (s.length()) render_skullbat(s, target.margin+x*0.6+te.width*SKT, target.margin+fe.height*2/3 + y *1.5*fe.height -size_phonetic_word(s)/2);
         x += 1;
     }
 
