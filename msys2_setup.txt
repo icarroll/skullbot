@@ -1,0 +1,8 @@
+# commands to get set up
+pacman -S --needed base-devel msys2-devel python3
+pacman -S mingw64/mingw-w64-x86_64-cairo
+python3 build_phonetic.py
+
+# commands to skullbatify
+export PATH=$PATH:/mingw64/bin
+./abjad <file name>
