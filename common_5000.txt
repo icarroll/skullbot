@@ -81,7 +81,7 @@ thinks TiNks
 thinking TiNkN
 thought Tat
 when wEn
-which wtS
+which wc
 them Tm
 some sm
 me m
@@ -93,7 +93,7 @@ took tUk
 taken tkn
 out `^at
 into `Int`
-just dZst
+just jst
 see si`
 him hm
 your yor
@@ -168,7 +168,7 @@ women wImn
 through Tru`
 us `s
 life lf
-child tSld
+child cld
 work wrk
 works wrks
 working wrkN
@@ -222,7 +222,7 @@ really rl`
 something smTN
 most most
 another `n@Tr
-much mtS
+much mc
 family fml`
 own `on
 owns `ons
@@ -289,7 +289,7 @@ parting prtN
 parted prtt
 against `knst
 place pls
-such stS
+such sc
 again `kn
 few fy`
 case ks
@@ -299,11 +299,11 @@ cased kst
 week wk
 company kmpn`
 system sstm
-each `tS
+each `c
 right rt
 program prkrm
 hear hir
-question kwstSn
+question kwscn
 during drN
 play pl`
 government gvrnmnt
@@ -340,7 +340,7 @@ happened hpnt
 next nkst
 without wTt
 before bfr
-large lrdZ
+large lrj
 million mlyn
 must mst
 home hom
@@ -367,7 +367,7 @@ studying stdyN
 studied stdd
 book bUk
 eye I
-job tSb
+job jb
 word wrd
 though T^o`
 business bsns
@@ -460,10 +460,10 @@ learns lrns
 learning lrnN
 learned lrnt
 real rl
-change tSndZ
-changes tSndZs
-changing tSndZN
-changed tSndZt
+change cnj
+changes cnjs
+changing cnjN
+changed cnjt
 team tim
 minute mnt
 best bst
@@ -484,10 +484,10 @@ understands `@ndErstAndz
 understanding `@ndErstAndIN
 understood `@ndErstUd
 whether wTr
-watch wtS
-watches wtSs
-watching wtSN
-watched wtSt
+watch wc
+watches wcs
+watching wcN
+watched wct
 together tkTr
 follow fal`
 follows falos
@@ -559,10 +559,10 @@ win wIn
 wins wIns
 winning wInN
 won wn
-research rsrtS
-researches rsrtSs
-researching rsrtSN
-researched rsrtSt
+research rsrc
+researches rsrcs
+researching rsrcN
+researched rsrct
 girl grl
 guy g`
 early `rl`
@@ -571,7 +571,7 @@ moment mmnt
 himself hmslf
 are `ar
 air `Er
-teacher ttSr
+teacher tcr
 force frs
 forces frss
 forcing frsN
@@ -594,7 +594,7 @@ boy b!o`
 maybe mb
 toward twrt
 able `bl
-age `dZ
+age `j
 policy pls`
 everything `frTN
 love l@v
@@ -614,7 +614,7 @@ appear `pr
 appears `prs
 appearing `prN
 appeared `prt
-actually `ktSl`
+actually `kcl`
 buy b`
 buys b!as
 buying byN
@@ -1843,8 +1843,8 @@ organize
 jury
 breast
 Iraqi
-acknowledge `knltS
-acknowledged `knltSt
+acknowledge `knlc
+acknowledged `knlct
 theme
 storm
 union
@@ -2878,7 +2878,7 @@ literary
 virus
 stupid
 dispute
-fortune frtSn
+fortune frcn
 strategic
 assistant
 overcome

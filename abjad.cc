@@ -358,6 +358,11 @@ float sb_t::size_consonant(char c) {
     case 'd':
     case 't':
         break;
+    case 'j':
+    case 'c':
+        size += ribstep/2;
+        size += halfstep;
+        break;
     case 'z':
     case 's':
         size += halfstep;
@@ -408,8 +413,12 @@ void sb_t::render_consonant(char c) {
         render_voice_mark(halfstep/2);
     case 'f':
         cairo_move_to(cr, spinex, riby);
+        /*
         cairo_line_to(cr, rightx, riby);
         cairo_rel_line_to(cr, -halfstep/2, halfstep);
+        */
+        cairo_rel_line_to(cr, 3*step/6, 0);
+        cairo_rel_curve_to(cr, 2*step/3,0, 2*step/3,halfstep, 0,halfstep);
         riby += halfstep;
         break;
     case 'D':
@@ -426,12 +435,27 @@ void sb_t::render_consonant(char c) {
         cairo_move_to(cr, leftx, riby);
         cairo_line_to(cr, rightx, riby);
         break;
+    case 'j':
+        render_voice_mark(halfstep/2+ribstep/4);
+    case 'c':
+        cairo_move_to(cr, rightx, riby);
+        cairo_line_to(cr, leftx, riby);
+        riby += ribstep/2;
+        cairo_move_to(cr, leftx, riby);
+        cairo_line_to(cr, rightx, riby);
+        cairo_rel_curve_to(cr, -2*step/3,0, -2*step/3,halfstep, 0,halfstep);
+        riby += halfstep;
+        break;
     case 'z':
         render_voice_mark(halfstep/2);
     case 's':
         cairo_move_to(cr, leftx, riby);
+        /*
         cairo_line_to(cr, rightx, riby);
         cairo_rel_line_to(cr, -halfstep/2, halfstep);
+        */
+        cairo_rel_line_to(cr, 9*step/6, 0);
+        cairo_rel_curve_to(cr, 2*step/3,0, 2*step/3,halfstep, 0,halfstep);
         riby += halfstep;
         break;
     case 'Z':
@@ -529,6 +553,10 @@ fills_t consonant_fills(char c) {
     case 't':
         return {true, true, true, true, true, true};
         break;
+    case 'j':
+    case 'c':
+        return {true, true, true, false, false, true};
+        break;
     case 'z':
     case 's':
         return {true, true, true, false, false, true};
@@ -590,6 +618,10 @@ vowel_space_t sb_t::vowel_space(char c) {
     case 'f':
     case 'z':
     case 's':
+        return {0,0};
+        break;
+    case 'j':
+    case 'c':
         return {0,0};
         break;
     case 'D':
