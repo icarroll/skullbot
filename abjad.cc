@@ -80,6 +80,7 @@ struct skullbat_context_t {
     float wordstep;
 
     float elstep;
+    float eldx;
 
     float hookrad;
     float dotrad;
@@ -264,7 +265,8 @@ void sb_t::set_skullbat_scale(float newscale) {
     vowelstep = ribstep;
     wordstep = step;
 
-    elstep = step * sqrt(2)/2;
+    elstep = 2*step / sqrt(5);
+    eldx = elstep;
 
     hookrad = 2*halfstep/3;
     dotrad = 2*halfstep/5;
@@ -378,14 +380,14 @@ float sb_t::size_consonant(char c) {
         size += halfstep;
         break;
     case 'w':
-        size += step;
+        size += halfstep;
         break;
     case 'l':
     case 'r':
-        size += 2*elstep;
+        size += elstep;
         break;
     case 'y':
-        size += step;
+        size += halfstep;
         break;
     case 'm':
     case 'n':
@@ -399,6 +401,19 @@ float sb_t::size_consonant(char c) {
     }
 
     return size;
+}
+
+struct point_t {
+    float x;
+    float y;
+};
+
+point_t r_rotate(point_t p0) {
+    point_t p;
+    float u = 1.0/sqrt(5);
+    p.x = p0.x * -2*u + p0.y * -u;
+    p.y = p0.x * u + p0.y * -2*u;
+    return p;
 }
 
 void sb_t::render_consonant(char c) {
@@ -480,24 +495,30 @@ void sb_t::render_consonant(char c) {
         break;
     case 'w':
         cairo_move_to(cr, rightx, riby);
-        riby += step;
+        riby += halfstep;
         cairo_line_to(cr, spinex, riby);
         break;
     case 'l':
-        cairo_move_to(cr, spinex+elstep, riby);
-        riby += 2*elstep;
-        cairo_line_to(cr, spinex-elstep, riby);
+        cairo_move_to(cr, spinex+eldx, riby);
+        riby += elstep;
+        cairo_line_to(cr, spinex-eldx, riby);
         break;
     case 'r':
-        cairo_move_to(cr, spinex+elstep, riby);
-        riby += 2*elstep;
-        cairo_line_to(cr, spinex-elstep, riby);
+        cairo_move_to(cr, spinex+eldx, riby);
+        riby += elstep;
+        cairo_line_to(cr, spinex-eldx, riby);
         //cairo_rel_curve_to(cr, elstep/2,-halfstep, elstep,0, 0,halfstep);
-        cairo_rel_curve_to(cr, halfstep,-elstep/2, 0,-elstep, -halfstep,0);
+        //cairo_rel_curve_to(cr, halfstep,-elstep/2, 0,-elstep, -halfstep,0);
+        {
+            point_t p_a = r_rotate({-2*step/3, 0});
+            point_t p_b = r_rotate({-2*step/3, halfstep});
+            point_t p_c = r_rotate({0, halfstep});
+            cairo_rel_curve_to(cr, p_a.x,p_a.y, p_b.x,p_b.y, p_c.x,p_c.y);
+        }
         break;
     case 'y':
         cairo_move_to(cr, spinex, riby);
-        riby += step;
+        riby += halfstep;
         cairo_line_to(cr, leftx, riby);
         break;
     case 'm':
